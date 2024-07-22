@@ -172,8 +172,14 @@ export default function Home() {
     console.log(url);
   };
   return (
-    <div className="bg-fixed  bg-red-200 dark:bg-slate-600 p-6  selection:bg-fuchsia-300 selection:text-fuchsia-900">
+    <div className="container bg-fixed mx-10 selection:bg-fuchsia-300 selection:text-fuchsia-900">
       <div>
+        <div className="md:break-inside-avoid-column">
+          <div>Hello</div>
+          <p className="hover:break-after-column">Sure</p>
+
+          <div>Bhai</div>
+        </div>
         <h1 className="">Cartesi-Privado Verifier</h1>
         <Network />
         <br />
