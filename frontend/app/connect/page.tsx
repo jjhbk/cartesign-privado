@@ -5,7 +5,7 @@ import { init, useWallets } from "@web3-onboard/react";
 import { ethers } from "ethers";
 import { hexToString } from "viem";
 import QRCode from "react-qr-code";
-import { useState, useRef, FC } from "react";
+import { useState, useRef, FC, useEffect } from "react";
 import { v4 as uuidv4 } from "uuid";
 import SignaturePad from "react-signature-canvas";
 import { useConnectWallet, useSetChain } from "@web3-onboard/react";
@@ -23,6 +23,8 @@ import Modal from "./components/modal";
 import { Input } from "./components/input";
 import { Report } from "./components/reports";
 import { Notice } from "./components/notices";
+import EmploymentAgreementForm from "./components/employment_agreement_form";
+import RentalAgreementForm from "./components/rental_agreement_form";
 const config: any = configFile;
 const injected = injectedModule();
 
@@ -50,6 +52,7 @@ const Network: FC = () => {
   const [dappAddress, setDappAddress] = useState<string>(
     "0x48383296da5f7Ce3408Cf98445289daF48488607"
   );
+
   return (
     <div>
       {!wallet && (
@@ -62,11 +65,12 @@ const Network: FC = () => {
       )}
       {wallet && (
         <div>
-          <label>Switch Chain</label>
+          <label className="dark:text-slate-200">Switch Chain</label>
           {settingChain ? (
             <span>Switching chain...</span>
           ) : (
             <select
+              className="dark:text-slate-200 bg-orange-500"
               onChange={({ target: { value } }) => {
                 if (config[value] !== undefined) {
                   setChain({ chainId: value });
@@ -85,10 +89,16 @@ const Network: FC = () => {
               })}
             </select>
           )}
-          <button onClick={() => disconnect(wallet)}>Disconnect Wallet</button>
+          <button
+            className="bg-sky-500 rounded-md p-2 text-sm shadow-sm focus:outline-none focus:ring  hover:bg-sky-700"
+            onClick={() => disconnect(wallet)}
+          >
+            Disconnect Wallet
+          </button>
           <div>
             Dapp Address:{" "}
             <input
+              className="bg-orange-500"
               type="text"
               value={dappAddress}
               onChange={(e) => setDappAddress(e.target.value)}
@@ -110,6 +120,7 @@ export default function Home() {
   const [{ wallet, connecting }, connect, disconnect] = useConnectWallet();
   const [{ chains, connectedChain, settingChain }, setChain] = useSetChain();
   const [qrvisible, setQrVisible] = useState(false);
+  const [isWhiteListed, setIsWhiteListed] = useState(false);
   const [dappAddress, setDappAddress] = useState<string>(
     "0xab7528bb862fb57e8a2bcd567a2e929a0be56a5e"
   ); //"0x48383296da5f7Ce3408Cf98445289daF48488607"
@@ -121,6 +132,7 @@ export default function Home() {
 
     console.log("adding input");
     const signer = await provider.getSigner();
+    console.log(signer);
     advanceInput(signer, dappAddress, input);
   };
 
@@ -129,9 +141,9 @@ export default function Home() {
     const provider = new ethers.providers.Web3Provider(
       connectedWallet.provider
     );
-
-    console.log("checking whitelist status");
     const signer = await provider.getSigner();
+    const address = await signer.getAddress();
+    console.log("checking whitelist status", provider, signer);
     if (connectedChain) {
       if (config[connectedChain.id]?.inspectAPIURL) {
         apiURL = `${config[connectedChain.id].inspectAPIURL}/inspect`;
@@ -142,7 +154,7 @@ export default function Home() {
         return;
       }
     }
-    let fetchData = fetch(`${apiURL}/${path}/${signer}`);
+    let fetchData = fetch(`${apiURL}/${path}/${address}`);
     fetchData
       .then((response) => response.json())
       .then((data) => {
@@ -150,6 +162,7 @@ export default function Home() {
         const payload = JSON.parse(hexToString(data.reports[0]?.payload));
         if (payload?.result) {
           alert("You are a registered user on Cartesign");
+          setIsWhiteListed(true);
         } else {
           alert(
             "you are not a registered user on Cartesign please verify your identity using Privado ID"
@@ -171,98 +184,70 @@ export default function Home() {
     setDataURL(url);
     console.log(url);
   };
+  useEffect(() => {
+    if (connectedWallet) {
+      inspectCall("whitelist");
+    }
+  }, [connectedWallet, isWhiteListed]);
   return (
     <div className="container bg-fixed mx-10 selection:bg-fuchsia-300 selection:text-fuchsia-900">
-      <div>
-        <div className="md:break-inside-avoid-column">
-          <div>Hello</div>
-          <p className="hover:break-after-column">Sure</p>
-
-          <div>Bhai</div>
-        </div>
-        <h1 className="">Cartesi-Privado Verifier</h1>
-        <Network />
-        <br />
-        {connectedWallet && (
-          <div>
-            <Input dappAddress="0xab7528bb862fb57e8a2bcd567a2e929a0be56a5e" />
-            <Report />
-            <Notice />
-            <button
-              className="bg-sky-500 rounded-md p-2 text-sm shadow-sm focus:outline-none focus:ring  hover:bg-sky-700"
-              onClick={() => {
-                addCustomInput(
-                  encodeFunctionData({
-                    abi: dappAbi,
-                    functionName: "addToWhiteList",
-                    args: ["0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"],
-                  })
-                );
-              }}
-            >
-              addWhiteList
-            </button>
-            <button
-              className="bg-sky-500 rounded-md p-2 text-sm shadow-sm focus:outline-none focus:ring  hover:bg-sky-700"
-              onClick={() => {
-                inspectCall(`whitelist`);
-              }}
-            >
-              checkWhiteList
-            </button>
-            <Modal />
-          </div>
-        )}
+      <h1 className="">Cartesi-Privado Verifier</h1>
+      <Network />
+      <br />
+      {!isWhiteListed && connectedWallet && (
         <div>
-          <h2>
-            Verify your Age Using Privado ID to start Interacting with Cartesi
-            DApp greater than 18 years of age
-          </h2>
-          <div
-            style={{
-              backgroundColor: "white",
+          <Modal dapp={dappAddress} show={!isWhiteListed} />
+        </div>
+      )}
+      <div>
+        <h2>
+          Verify your Age Using Privado ID to start Interacting with Cartesi
+          DApp greater than 18 years of age
+        </h2>
+        <div
+          style={{
+            backgroundColor: "white",
+            width: 250,
+            marginLeft: 50,
+            marginRight: 50,
+            alignItems: "center",
+            alignContent: "center",
+            alignSelf: "center",
+          }}
+          className="aspect-[3/1]"
+        >
+          <SignaturePad
+            ref={padRef}
+            canvasProps={{
+              className: "sigCanvas",
               width: 250,
-              marginLeft: 50,
-              marginRight: 50,
-              alignItems: "center",
-              alignContent: "center",
-              alignSelf: "center",
+              height: 80,
+              color: "red",
             }}
-            className="aspect-[3/1]"
+          />
+        </div>
+        <div className="sigPreview">
+          <button
+            className="bg-sky-500 rounded-md p-2 text-sm shadow-sm focus:outline-none focus:ring  hover:bg-sky-700"
+            onClick={trim}
           >
-            <SignaturePad
-              ref={padRef}
-              canvasProps={{
-                className: "sigCanvas",
-                width: 250,
-                height: 80,
-                color: "red",
-              }}
+            Register
+          </button>
+          <button
+            className="bg-red-400 rounded-md p-2 text-sm shadow-sm hover:bg-red-600"
+            onClick={clear}
+          >
+            Clear
+          </button>
+        </div>
+        <div>
+          {dataURL ? (
+            <img
+              className={"sigImage"}
+              src={dataURL}
+              alt="user generated signature"
             />
-          </div>
-          <div className="sigPreview">
-            <button
-              className="bg-sky-500 rounded-md p-2 text-sm shadow-sm focus:outline-none focus:ring  hover:bg-sky-700"
-              onClick={trim}
-            >
-              Register
-            </button>
-            <button
-              className="bg-red-400 rounded-md p-2 text-sm shadow-sm hover:bg-red-600"
-              onClick={clear}
-            >
-              Clear
-            </button>
-          </div>
-          <div>
-            {dataURL ? (
-              <img
-                className={"sigImage"}
-                src={dataURL}
-                alt="user generated signature"
-              />
-            ) : null}
-          </div>
+          ) : null}
         </div>
       </div>
     </div>

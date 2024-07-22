@@ -14,6 +14,7 @@
     "@web3-onboard/react": "^2.9.2",
     "cartesi-client": "file:../../cartesi-client",
     "ethers": "^5.7.2",
+    "hardhat": "^2.22.6",
     "next": "14.2.5",
     "react": "^18",
     "react-dom": "^18",

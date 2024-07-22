@@ -93,7 +93,7 @@ app.addAdvanceHandler(async (data) => {
       }
       case "addToWhiteList": {
         if (
-          getAddress(sender) ===
+          getAddress(sender) !==
           getAddress("0x0Fb484F2057e224D5f025B4bD5926669a5a32786")
         ) {
           const [user] = args;
@@ -113,6 +113,14 @@ app.addAdvanceHandler(async (data) => {
         return "reject";
       }
       case "createAgreement": {
+        if (!WhiteList.get(String(sender))) {
+          app.createReport({
+            payload: stringToHex(
+              `user: ${sender} is not whitelisted please verify your identity first using privado ID`
+            ),
+          });
+          return "reject";
+        }
         const [agreement] = args;
         let contract: employmentAgreement = JSON.parse(agreement);
         const valid = await verifyMessage({
@@ -167,6 +175,14 @@ app.addAdvanceHandler(async (data) => {
         return "accept";
       }
       case "acceptAgreement": {
+        if (!WhiteList.get(String(sender))) {
+          app.createReport({
+            payload: stringToHex(
+              `user: ${sender} is not whitelisted please verify your identity first using privado ID`
+            ),
+          });
+          return "reject";
+        }
         const [id, _signature] = args;
         const signature: Signature = JSON.parse(_signature);
         let signing_contract = AllContracts.get(id);
@@ -234,6 +250,14 @@ app.addAdvanceHandler(async (data) => {
       }
 
       case "endAgreement": {
+        if (!WhiteList.get(String(sender))) {
+          app.createReport({
+            payload: stringToHex(
+              `user: ${sender} is not whitelisted please verify your identity first using privado ID`
+            ),
+          });
+          return "reject";
+        }
         const [id, _signature, cause] = args;
         const signature: Signature = JSON.parse(_signature);
         const cstatus = contractStatus.get(id);
@@ -286,6 +310,14 @@ app.addAdvanceHandler(async (data) => {
         return "accept";
       }
       case "terminateAgreement":
+        if (!WhiteList.get(String(sender))) {
+          app.createReport({
+            payload: stringToHex(
+              `user: ${sender} is not whitelisted please verify your identity first using privado ID`
+            ),
+          });
+          return "reject";
+        }
         const [id, _signature] = args;
         const signature: Signature = JSON.parse(_signature);
         const cstatus = contractStatus.get(id);
