@@ -16,25 +16,21 @@ import {
   Status,
   termination,
 } from "./types";
-import { send } from "process";
-import { stat } from "fs";
 // create application
 const app = createApp({ url: "http://127.0.0.1:8080/host-runner" });
 const wallet = createWallet();
 const router = createRouter({ app });
 type ContractStatus = {
+  id: string;
   contractType: contractType;
   status: Status;
 };
 
 let AllContracts: Map<string, employmentAgreement | rentalAgreement> =
   new Map();
-let TerminatedContracts: Map<string, employmentAgreement | rentalAgreement> =
-  new Map();
 
-let contractStatus: Map<string, ContractStatus> = new Map();
-let contractorList: Map<string, Set<string>> = new Map();
-let contracteeList: Map<string, Set<string>> = new Map();
+//let contractStatus: Map<string, ContractStatus> = new Map();
+let contractsList: Map<string, Set<String>> = new Map();
 router.add<{ address: string }>(
   "wallet/:address",
   ({ params: { address } }) => {
@@ -51,8 +47,18 @@ router.add<{ address: string }>(
     });
   }
 );
+router.add<{ address: string }>(
+  "contracts/:address",
+  ({ params: { address } }) => {
+    return JSON.stringify({
+      result: contractsList.get(String(address)),
+    });
+  }
+);
 
 const WhiteList = new Map<string, boolean>();
+WhiteList.set("0x70997970C51812dc3A010C7d01b50e0d17dc79C8", true);
+WhiteList.set("0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266", true);
 // define application ABI
 const abi = parseAbi([
   "function checkWhiteList(address user)",
@@ -125,7 +131,7 @@ app.addAdvanceHandler(async (data) => {
         let contract: employmentAgreement = JSON.parse(agreement);
         const valid = await verifyMessage({
           address: getAddress(String(contract.contractCreator)),
-          message: contract.agreementId,
+          message: contract.signatures.contractorSignature.physical_signature,
           signature: stringToHex(
             String(contract.signatures.contractorSignature.digital_signature)
           ),
@@ -155,16 +161,21 @@ app.addAdvanceHandler(async (data) => {
           data.metadata.timestamp;
         contract.status = Status.inProcess;
         AllContracts.set(contract.agreementId, contract);
-        contractStatus.set(contract.agreementId, {
+        /*     contractStatus.set(contract.agreementId, {
           contractType: contract.contractType,
           status: Status.inProcess,
-        });
-        let list = contractorList.get(sender);
+        });*/
+        let list = contractsList.get(sender);
         if (!list) {
           list = new Set();
         }
-        list.add(contract.agreementId);
-        contractorList.set(sender, list);
+        let contractdetails: ContractStatus = {
+          id: contract.agreementId,
+          status: contract.status,
+          contractType: contract.contractType,
+        };
+        list.add(JSON.stringify(contractdetails));
+        contractsList.set(sender, list);
         app.createNotice({
           payload: stringToHex(
             `contract created with id ${contract.agreementId}:${JSON.stringify(
@@ -186,12 +197,8 @@ app.addAdvanceHandler(async (data) => {
         const [id, _signature] = args;
         const signature: Signature = JSON.parse(_signature);
         let signing_contract = AllContracts.get(id);
-        const cstatus = contractStatus.get(id);
-        if (
-          !signing_contract ||
-          !cstatus ||
-          cstatus?.status != Status.inProcess
-        ) {
+        const cstatus = signing_contract?.status;
+        if (!signing_contract || !cstatus || cstatus != Status.inProcess) {
           app.createReport({
             payload: stringToHex(
               `contract with id ${id} not found with status ${cstatus} & type ${signing_contract?.contractType}`
@@ -214,7 +221,7 @@ app.addAdvanceHandler(async (data) => {
 
         const valid = await verifyMessage({
           address: getAddress(String(signing_contract.contractee.wallet)),
-          message: signing_contract.agreementId,
+          message: signature.physical_signature,
           signature: stringToHex(String(signature.digital_signature)),
         });
         if (!valid) {
@@ -230,14 +237,20 @@ app.addAdvanceHandler(async (data) => {
         signing_contract.signatures.contracteeSignature = signature;
         signing_contract.status = Status.active;
         AllContracts.set(signing_contract.agreementId, signing_contract);
-        cstatus.status = Status.active;
-        contractStatus.set(signing_contract.agreementId, cstatus);
-        let list = contracteeList.get(sender);
+        //   cstatus.status = Status.active;
+        //     contractStatus.set(signing_contract.agreementId, cstatus);
+        let list = contractsList.get(sender);
         if (!list) {
           list = new Set();
         }
-        list.add(signing_contract.agreementId);
-        contracteeList.set(sender, list);
+        let contractdetails: ContractStatus = {
+          id: signing_contract.agreementId,
+          status: signing_contract.status,
+          contractType: signing_contract.contractType,
+        };
+        list.add(JSON.stringify(contractdetails));
+
+        contractsList.set(sender, list);
 
         app.createNotice({
           payload: stringToHex(
@@ -260,17 +273,17 @@ app.addAdvanceHandler(async (data) => {
         }
         const [id, _signature, cause] = args;
         const signature: Signature = JSON.parse(_signature);
-        const cstatus = contractStatus.get(id);
         let contractor_end_agreement = AllContracts.get(id);
+        const cstatus = contractor_end_agreement?.status; //contractStatus.get(id);
 
         if (
           !cstatus ||
-          cstatus.status !== Status.active ||
+          cstatus !== Status.active ||
           !contractor_end_agreement
         ) {
           app.createReport({
             payload: stringToHex(
-              `No active contract with id ${id} found with status ${cstatus?.status}`
+              `No active contract with id ${id} found with status ${cstatus}`
             ),
           });
           return "reject";
@@ -280,7 +293,7 @@ app.addAdvanceHandler(async (data) => {
           address: getAddress(
             String(contractor_end_agreement.contractor.wallet)
           ),
-          message: contractor_end_agreement.agreementId,
+          message: signature.physical_signature,
           signature: stringToHex(String(signature.digital_signature)),
         });
         if (!valid) {
@@ -295,12 +308,13 @@ app.addAdvanceHandler(async (data) => {
         signature.timestamp = data.metadata.timestamp;
         contractor_end_agreement.termination.Signatures.contractor = signature;
         contractor_end_agreement.termination.reason = cause;
+        contractor_end_agreement.status = Status.inActive;
         AllContracts.set(
           contractor_end_agreement.agreementId,
           contractor_end_agreement
         );
-        cstatus.status = Status.inActive;
-        contractStatus.set(contractor_end_agreement.agreementId, cstatus);
+        // cstatus.status = Status.inActive;
+        //contractStatus.set(contractor_end_agreement.agreementId, cstatus);
 
         app.createNotice({
           payload: stringToHex(
@@ -320,17 +334,13 @@ app.addAdvanceHandler(async (data) => {
         }
         const [id, _signature] = args;
         const signature: Signature = JSON.parse(_signature);
-        const cstatus = contractStatus.get(id);
         let terminate_agreement = AllContracts.get(id);
+        const cstatus = terminate_agreement?.status;
 
-        if (
-          !cstatus ||
-          cstatus.status != Status.inActive ||
-          !terminate_agreement
-        ) {
+        if (!cstatus || cstatus != Status.inActive || !terminate_agreement) {
           app.createReport({
             payload: stringToHex(
-              `No inActive contract with id ${id} found, with status ${cstatus?.status}`
+              `No inActive contract with id ${id} found, with status ${cstatus}`
             ),
           });
           return "reject";
@@ -338,7 +348,7 @@ app.addAdvanceHandler(async (data) => {
 
         const valid = await verifyMessage({
           address: getAddress(String(terminate_agreement.contractee.wallet)),
-          message: terminate_agreement.agreementId,
+          message: signature.physical_signature,
           signature: stringToHex(String(signature.digital_signature)),
         });
         if (!valid) {
@@ -352,15 +362,12 @@ app.addAdvanceHandler(async (data) => {
 
         signature.timestamp = data.metadata.timestamp;
         terminate_agreement.termination.Signatures.contractee = signature;
+        terminate_agreement.status = Status.terminated;
+        AllContracts.set(terminate_agreement.agreementId, terminate_agreement);
+        //AllContracts.delete(terminate_agreement.agreementId);
 
-        TerminatedContracts.set(
-          terminate_agreement.agreementId,
-          terminate_agreement
-        );
-        AllContracts.delete(terminate_agreement.agreementId);
-
-        cstatus.status = Status.terminated;
-        contractStatus.set(terminate_agreement.agreementId, cstatus);
+        // cstatus.status = Status.terminated;
+        // contractStatus.set(terminate_agreement.agreementId, cstatus);
 
         app.createNotice({
           payload: stringToHex(

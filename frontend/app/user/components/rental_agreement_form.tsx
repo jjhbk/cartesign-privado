@@ -1,116 +1,26 @@
+import { Checkbox } from "@material-ui/core";
 import { useState } from "react";
-
-export enum Currency {
-  USD = 1,
-  INR,
-  EUR,
-}
-
-export enum Frequency {
-  Weekly = 1,
-  Biweekly,
-  Monthly,
-  Annualy,
-}
-
-export enum Status {
-  Active = 1,
-  InProcess,
-  Inactive,
-  Terminated,
-}
-
-export enum ContractType {
-  Employment = 1,
-  Rental,
-}
-
-export enum TerminationReasons {
-  GrossMisconduct = 1,
-  ViolationOfCompanyPolicy,
-  Fraud,
-  PoorPerformance,
-  Redundancy,
-  MutualAgreement,
-  ContractExpired,
-  Other,
-}
-
-export type User = {
-  name: string;
-  contact: {
-    address: string;
-    phone: string;
-    email: string;
-  };
-  wallet: string;
-};
-
-export type Signature = {
-  name: string;
-  title: string;
-  timestamp: number;
-  physical_signature: string;
-  digital_signature: string;
-};
-
-export type Termination = {
-  noticePeriodDays: number;
-  reason: TerminationReasons;
-  signatures: {
-    contractor: Signature;
-    contractee: Signature;
-  };
-};
-
-export type EmploymentAgreement = {
-  agreementId: string;
-  contractType: ContractType;
-  contractCreator: string;
-  status: Status;
-  contractor: User;
-  contractee: User;
-  position: {
-    title: string;
-    department: string;
-    startDate: string;
-    endDate: string;
-    fulltime: boolean;
-  };
-  compensation: {
-    salary: {
-      amount: number;
-      currency: Currency;
-      frequency: Frequency;
-    };
-    bonuses: {
-      eligibility: boolean;
-      details: string;
-      amount: number;
-    };
-    benefits: {
-      healthInsurance: boolean;
-      retirementPlan: boolean;
-      paidTimeOff: {
-        days: number;
-        type: Frequency;
-      };
-    };
-  };
-  responsibilities: Array<string>;
-  termination: Termination;
-  signatures: {
-    contractorSignature: Signature;
-    contracteeSignature: Signature;
-  };
-};
-
-const EmploymentAgreementForm = () => {
-  const [formData, setFormData] = useState<EmploymentAgreement>({
+import {
+  rentalAgreement,
+  contractType,
+  Status,
+  currency,
+  terminationReasons,
+  User,
+} from "@/app/components/types";
+const RentalAgreementForm = () => {
+  const [formData, setFormData] = useState<rentalAgreement>({
     agreementId: "",
-    contractType: ContractType.Rental,
+    contractType: contractType.rental,
     contractCreator: "",
-    status: Status.Inactive,
+    status: Status.active,
+    property: {
+      address: "",
+      property_type: "",
+      bedrooms: 0,
+      bathrooms: 0,
+      total_area_sqft: 0,
+    },
     contractor: {
       name: "",
       contact: {
@@ -129,48 +39,49 @@ const EmploymentAgreementForm = () => {
       },
       wallet: "",
     },
-    position: {
-      title: "",
-      department: "",
+    leaseTerms: {
       startDate: "",
       endDate: "",
-      fulltime: false,
-    },
-    compensation: {
-      salary: {
+      rent: {
         amount: 0,
-        currency: Currency.USD,
-        frequency: Frequency.Monthly,
+        currency: currency.USD,
+        dueDate: 1,
       },
-      bonuses: {
-        eligibility: false,
-        details: "",
+      securityDeposit: {
         amount: 0,
+        currency: currency.USD,
       },
-      benefits: {
-        healthInsurance: false,
-        retirementPlan: false,
-        paidTimeOff: {
-          days: 0,
-          type: Frequency.Annualy,
-        },
+      lateFee: {
+        amount: 0,
+        currency: currency.USD,
+        gracePeriod: 0,
       },
     },
-    responsibilities: [],
+    utilities: {
+      included: [],
+      tenantResponsibilities: [],
+    },
+    maintenance: {
+      landlordResponsibility: [],
+      tenantResponsibility: [],
+    },
+    rules: {
+      petsAllowed: false,
+      smokingAllowed: false,
+      sublettingAllowed: false,
+    },
     termination: {
       noticePeriodDays: 0,
-      reason: TerminationReasons.Other,
-      signatures: {
+      reason: terminationReasons.other,
+      Signatures: {
         contractor: {
           name: "",
-          title: "",
           timestamp: Date.now(),
           physical_signature: "",
           digital_signature: "",
         },
         contractee: {
           name: "",
-          title: "",
           timestamp: Date.now(),
           physical_signature: "",
           digital_signature: "",
@@ -180,14 +91,12 @@ const EmploymentAgreementForm = () => {
     signatures: {
       contractorSignature: {
         name: "",
-        title: "",
         timestamp: Date.now(),
         physical_signature: "",
         digital_signature: "",
       },
       contracteeSignature: {
         name: "",
-        title: "",
         timestamp: Date.now(),
         physical_signature: "",
         digital_signature: "",
@@ -202,6 +111,7 @@ const EmploymentAgreementForm = () => {
   ) => {
     const { name, value, type } = e.target;
     console.log(name, value, type);
+
     const nameParts = name.split(".");
 
     const updateNestedState = (
@@ -210,6 +120,9 @@ const EmploymentAgreementForm = () => {
       newValue: any
     ): any => {
       if (parts.length === 1) {
+        if (type == "checkbox") {
+          newValue = !state[parts[0]];
+        }
         return {
           ...state,
           [parts[0]]: newValue,
@@ -225,19 +138,7 @@ const EmploymentAgreementForm = () => {
         ),
       };
     };
-    let checked_value = false;
-    if (type == "checkbox") {
-      if (value == "on") {
-        checked_value = true;
-      } else {
-        checked_value = false;
-      }
-    }
-    const newValue = type === "checkbox" ? checked_value : value;
-
-    setFormData((prevState) =>
-      updateNestedState(nameParts, prevState, newValue)
-    );
+    setFormData((prevState) => updateNestedState(nameParts, prevState, value));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -251,7 +152,9 @@ const EmploymentAgreementForm = () => {
         className="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4"
         onSubmit={handleSubmit}
       >
-        <h2 className="text-2xl font-bold mb-4">Employment Agreement Form</h2>
+        <h2 className="text-xl text-black font-bold mb-4">
+          Rental Agreement Form
+        </h2>
 
         <div className="mb-4">
           <label
@@ -285,7 +188,8 @@ const EmploymentAgreementForm = () => {
             onChange={handleChange}
             className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
           >
-            <option value={ContractType.Employment}>Employment</option>
+            <option value={contractType.employment}>Employment</option>
+            <option value={contractType.rental}>Rental</option>
           </select>
         </div>
 
@@ -321,8 +225,98 @@ const EmploymentAgreementForm = () => {
             onChange={handleChange}
             className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
           >
-            <option value={Status.Inactive}>Inactive</option>
+            <option value={Status.active}>Active</option>
+            <option value={Status.inProcess}>In Process</option>
+            <option value={Status.inActive}>Inactive</option>
+            <option value={Status.terminated}>Terminated</option>
           </select>
+        </div>
+
+        <h3 className="text-xl font-bold mb-2">Property Information</h3>
+        <div className="mb-4">
+          <label
+            className="block text-gray-700 text-sm font-bold mb-2"
+            htmlFor="propertyAddress"
+          >
+            Address
+          </label>
+          <input
+            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            id="propertyAddress"
+            type="text"
+            name="property.address"
+            value={formData.property.address}
+            onChange={handleChange}
+            placeholder="Enter Property Address"
+          />
+        </div>
+        <div className="mb-4">
+          <label
+            className="block text-gray-700 text-sm font-bold mb-2"
+            htmlFor="propertyType"
+          >
+            Property Type
+          </label>
+          <input
+            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            id="propertyType"
+            type="text"
+            name="property.property_type"
+            value={formData.property.property_type}
+            onChange={handleChange}
+            placeholder="Enter Property Type"
+          />
+        </div>
+        <div className="mb-4">
+          <label
+            className="block text-gray-700 text-sm font-bold mb-2"
+            htmlFor="propertyBedrooms"
+          >
+            Bedrooms
+          </label>
+          <input
+            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            id="propertyBedrooms"
+            type="number"
+            name="property.bedrooms"
+            value={formData.property.bedrooms}
+            onChange={handleChange}
+            placeholder="Enter Number of Bedrooms"
+          />
+        </div>
+        <div className="mb-4">
+          <label
+            className="block text-gray-700 text-sm font-bold mb-2"
+            htmlFor="propertyBathrooms"
+          >
+            Bathrooms
+          </label>
+          <input
+            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            id="propertyBathrooms"
+            type="number"
+            name="property.bathrooms"
+            value={formData.property.bathrooms}
+            onChange={handleChange}
+            placeholder="Enter Number of Bathrooms"
+          />
+        </div>
+        <div className="mb-4">
+          <label
+            className="block text-gray-700 text-sm font-bold mb-2"
+            htmlFor="propertyTotalArea"
+          >
+            Total Area (sqft)
+          </label>
+          <input
+            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            id="propertyTotalArea"
+            type="number"
+            name="property.total_area_sqft"
+            value={formData.property.total_area_sqft}
+            onChange={handleChange}
+            placeholder="Enter Total Area in sqft"
+          />
         </div>
 
         <h3 className="text-xl font-bold mb-2">Contractor Information</h3>
@@ -465,294 +459,344 @@ const EmploymentAgreementForm = () => {
           />
         </div>
 
-        <h3 className="text-xl font-bold mb-2">Position Information</h3>
+        <h3 className="text-xl font-bold mb-2">Lease Terms</h3>
         <div className="mb-4">
           <label
             className="block text-gray-700 text-sm font-bold mb-2"
-            htmlFor="positionTitle"
-          >
-            Title
-          </label>
-          <input
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-            id="positionTitle"
-            type="text"
-            name="position.title"
-            value={formData.position.title}
-            onChange={handleChange}
-            placeholder="Enter Position Title"
-          />
-        </div>
-        <div className="mb-4">
-          <label
-            className="block text-gray-700 text-sm font-bold mb-2"
-            htmlFor="positionDepartment"
-          >
-            Department
-          </label>
-          <input
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-            id="positionDepartment"
-            type="text"
-            name="position.department"
-            value={formData.position.department}
-            onChange={handleChange}
-            placeholder="Enter Position Department"
-          />
-        </div>
-        <div className="mb-4">
-          <label
-            className="block text-gray-700 text-sm font-bold mb-2"
-            htmlFor="positionStartDate"
+            htmlFor="leaseStartDate"
           >
             Start Date
           </label>
           <input
             className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-            id="positionStartDate"
+            id="leaseStartDate"
             type="date"
-            name="position.startDate"
-            value={formData.position.startDate}
+            name="leaseTerms.startDate"
+            value={formData.leaseTerms.startDate}
             onChange={handleChange}
           />
         </div>
         <div className="mb-4">
           <label
             className="block text-gray-700 text-sm font-bold mb-2"
-            htmlFor="positionEndDate"
+            htmlFor="leaseEndDate"
           >
             End Date
           </label>
           <input
             className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-            id="positionEndDate"
+            id="leaseEndDate"
             type="date"
-            name="position.endDate"
-            value={formData.position.endDate}
+            name="leaseTerms.endDate"
+            value={formData.leaseTerms.endDate}
             onChange={handleChange}
           />
         </div>
         <div className="mb-4">
           <label
             className="block text-gray-700 text-sm font-bold mb-2"
-            htmlFor="positionFulltime"
+            htmlFor="rentAmount"
           >
-            Full-time
+            Rent Amount
           </label>
           <input
             className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-            id="positionFulltime"
-            type="checkbox"
-            name="position.fulltime"
-            checked={formData.position.fulltime}
-            onChange={handleChange}
-          />
-        </div>
-
-        <h3 className="text-xl font-bold mb-2">Compensation Information</h3>
-        <div className="mb-4">
-          <label
-            className="block text-gray-700 text-sm font-bold mb-2"
-            htmlFor="salaryAmount"
-          >
-            Salary Amount
-          </label>
-          <input
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-            id="salaryAmount"
+            id="rentAmount"
             type="number"
-            name="compensation.salary.amount"
-            value={formData.compensation.salary.amount}
+            name="leaseTerms.rent.amount"
+            value={formData.leaseTerms.rent.amount}
             onChange={handleChange}
-            placeholder="Enter Salary Amount"
+            placeholder="Enter Rent Amount"
           />
         </div>
         <div className="mb-4">
           <label
             className="block text-gray-700 text-sm font-bold mb-2"
-            htmlFor="salaryCurrency"
+            htmlFor="rentcurrency"
           >
-            Salary Currency
+            Rent currency
           </label>
           <select
-            id="salaryCurrency"
-            name="compensation.salary.currency"
-            value={formData.compensation.salary.currency}
+            id="rentcurrency"
+            name="leaseTerms.rent.currency"
+            value={formData.leaseTerms.rent.currency}
             onChange={handleChange}
             className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
           >
-            <option value={Currency.USD}>USD</option>
-            <option value={Currency.INR}>INR</option>
-            <option value={Currency.EUR}>EUR</option>
+            <option value={currency.USD}>USD</option>
+            <option value={currency.INR}>INR</option>
+            <option value={currency.EUR}>EUR</option>
           </select>
         </div>
         <div className="mb-4">
           <label
             className="block text-gray-700 text-sm font-bold mb-2"
-            htmlFor="salaryFrequency"
+            htmlFor="rentDueDate"
           >
-            Salary Frequency
+            Rent Due Date
+          </label>
+          <input
+            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            id="rentDueDate"
+            type="number"
+            name="leaseTerms.rent.dueDate"
+            value={formData.leaseTerms.rent.dueDate}
+            onChange={handleChange}
+            placeholder="Enter Rent Due Date"
+          />
+        </div>
+
+        <div className="mb-4">
+          <label
+            className="block text-gray-700 text-sm font-bold mb-2"
+            htmlFor="securityDepositAmount"
+          >
+            Security Deposit Amount
+          </label>
+          <input
+            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            id="securityDepositAmount"
+            type="number"
+            name="leaseTerms.securityDeposit.amount"
+            value={formData.leaseTerms.securityDeposit.amount}
+            onChange={handleChange}
+            placeholder="Enter Security Deposit Amount"
+          />
+        </div>
+        <div className="mb-4">
+          <label
+            className="block text-gray-700 text-sm font-bold mb-2"
+            htmlFor="securityDepositcurrency"
+          >
+            Security Deposit currency
           </label>
           <select
-            id="salaryFrequency"
-            name="compensation.salary.frequency"
-            value={formData.compensation.salary.frequency}
+            id="securityDepositcurrency"
+            name="leaseTerms.securityDeposit.currency"
+            value={formData.leaseTerms.securityDeposit.currency}
             onChange={handleChange}
             className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
           >
-            <option value={Frequency.Weekly}>Weekly</option>
-            <option value={Frequency.Biweekly}>Bi-weekly</option>
-            <option value={Frequency.Monthly}>Monthly</option>
-            <option value={Frequency.Annualy}>Annually</option>
+            <option value={currency.USD}>USD</option>
+            <option value={currency.INR}>INR</option>
+            <option value={currency.EUR}>EUR</option>
           </select>
         </div>
 
-        <h3 className="text-xl font-bold mb-2">Bonuses</h3>
         <div className="mb-4">
           <label
             className="block text-gray-700 text-sm font-bold mb-2"
-            htmlFor="bonusEligibility"
+            htmlFor="lateFeeAmount"
           >
-            Eligibility
+            Late Fee Amount
           </label>
           <input
             className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-            id="bonusEligibility"
-            type="checkbox"
-            name="compensation.bonuses.eligibility"
-            checked={formData.compensation.bonuses.eligibility}
+            id="lateFeeAmount"
+            type="number"
+            name="leaseTerms.lateFee.amount"
+            value={formData.leaseTerms.lateFee.amount}
             onChange={handleChange}
+            placeholder="Enter Late Fee Amount"
           />
         </div>
         <div className="mb-4">
           <label
             className="block text-gray-700 text-sm font-bold mb-2"
-            htmlFor="bonusDetails"
+            htmlFor="lateFeecurrency"
           >
-            Details
+            Late Fee currency
+          </label>
+          <select
+            id="lateFeecurrency"
+            name="leaseTerms.lateFee.currency"
+            value={formData.leaseTerms.lateFee.currency}
+            onChange={handleChange}
+            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+          >
+            <option value={currency.USD}>USD</option>
+            <option value={currency.INR}>INR</option>
+            <option value={currency.EUR}>EUR</option>
+          </select>
+        </div>
+        <div className="mb-4">
+          <label
+            className="block text-gray-700 text-sm font-bold mb-2"
+            htmlFor="gracePeriod"
+          >
+            Grace Period
           </label>
           <input
             className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-            id="bonusDetails"
+            id="gracePeriod"
+            type="number"
+            name="leaseTerms.lateFee.gracePeriod"
+            value={formData.leaseTerms.lateFee.gracePeriod}
+            onChange={handleChange}
+            placeholder="Enter Grace Period"
+          />
+        </div>
+
+        <h3 className="text-xl font-bold mb-2">Utilities</h3>
+        <div className="mb-4">
+          <label
+            className="block text-gray-700 text-sm font-bold mb-2"
+            htmlFor="utilitiesIncluded"
+          >
+            Included Utilities (comma separated)
+          </label>
+          <input
+            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            id="utilitiesIncluded"
             type="text"
-            name="compensation.bonuses.details"
-            value={formData.compensation.bonuses.details}
-            onChange={handleChange}
-            placeholder="Enter Bonus Details"
-          />
-        </div>
-        <div className="mb-4">
-          <label
-            className="block text-gray-700 text-sm font-bold mb-2"
-            htmlFor="bonusAmount"
-          >
-            Amount
-          </label>
-          <input
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-            id="bonusAmount"
-            type="number"
-            name="compensation.bonuses.amount"
-            value={formData.compensation.bonuses.amount}
-            onChange={handleChange}
-            placeholder="Enter Bonus Amount"
-          />
-        </div>
-
-        <h3 className="text-xl font-bold mb-2">Benefits</h3>
-        <div className="mb-4">
-          <label
-            className="block text-gray-700 text-sm font-bold mb-2"
-            htmlFor="healthInsurance"
-          >
-            Health Insurance
-          </label>
-          <input
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-            id="healthInsurance"
-            type="checkbox"
-            name="compensation.benefits.healthInsurance"
-            checked={formData.compensation.benefits.healthInsurance}
-            onChange={handleChange}
-          />
-        </div>
-        <div className="mb-4">
-          <label
-            className="block text-gray-700 text-sm font-bold mb-2"
-            htmlFor="retirementPlan"
-          >
-            Retirement Plan
-          </label>
-          <input
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-            id="retirementPlan"
-            type="checkbox"
-            name="compensation.benefits.retirementPlan"
-            checked={formData.compensation.benefits.retirementPlan}
-            onChange={handleChange}
-          />
-        </div>
-        <div className="mb-4">
-          <label
-            className="block text-gray-700 text-sm font-bold mb-2"
-            htmlFor="paidTimeOffDays"
-          >
-            Paid Time Off Days
-          </label>
-          <input
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-            id="paidTimeOffDays"
-            type="number"
-            name="compensation.benefits.paidTimeOff.days"
-            value={formData.compensation.benefits.paidTimeOff.days}
-            onChange={handleChange}
-            placeholder="Enter Paid Time Off Days"
-          />
-        </div>
-        <div className="mb-4">
-          <label
-            className="block text-gray-700 text-sm font-bold mb-2"
-            htmlFor="paidTimeOffFrequency"
-          >
-            Paid Time Off Frequency
-          </label>
-          <select
-            id="paidTimeOffFrequency"
-            name="compensation.benefits.paidTimeOff.type"
-            value={formData.compensation.benefits.paidTimeOff.type}
-            onChange={handleChange}
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-          >
-            <option value={Frequency.Weekly}>Weekly</option>
-            <option value={Frequency.Biweekly}>Bi-weekly</option>
-            <option value={Frequency.Monthly}>Monthly</option>
-            <option value={Frequency.Annualy}>Annually</option>
-          </select>
-        </div>
-
-        <h3 className="text-xl font-bold mb-2">Responsibilities</h3>
-        <div className="mb-4">
-          <label
-            className="block text-gray-700 text-sm font-bold mb-2"
-            htmlFor="responsibilities"
-          >
-            List Responsibilities (comma separated)
-          </label>
-          <input
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-            id="responsibilities"
-            type="text"
-            name="responsibilities"
-            value={formData.responsibilities.join(", ")}
+            name="utilities.included"
+            value={formData.utilities.included.join(", ")}
             onChange={(e) =>
               setFormData({
                 ...formData,
-                responsibilities: e.target.value
-                  .split(",")
-                  .map((res) => res.trim()),
+                utilities: {
+                  ...formData.utilities,
+                  included: e.target.value
+                    .split(",")
+                    .map((item) => item.trim()),
+                },
               })
             }
-            placeholder="Enter Responsibilities"
+            placeholder="Enter Included Utilities"
+          />
+        </div>
+        <div className="mb-4">
+          <label
+            className="block text-gray-700 text-sm font-bold mb-2"
+            htmlFor="tenantResponsibilities"
+          >
+            Tenant Responsibilities (comma separated)
+          </label>
+          <input
+            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            id="tenantResponsibilities"
+            type="text"
+            name="utilities.tenantResponsibilities"
+            value={formData.utilities.tenantResponsibilities.join(", ")}
+            onChange={(e) =>
+              setFormData({
+                ...formData,
+                utilities: {
+                  ...formData.utilities,
+                  tenantResponsibilities: e.target.value
+                    .split(",")
+                    .map((item) => item.trim()),
+                },
+              })
+            }
+            placeholder="Enter Tenant Responsibilities"
+          />
+        </div>
+
+        <h3 className="text-xl font-bold mb-2">Maintenance</h3>
+        <div className="mb-4">
+          <label
+            className="block text-gray-700 text-sm font-bold mb-2"
+            htmlFor="landlordResponsibility"
+          >
+            Landlord Responsibilities (comma separated)
+          </label>
+          <input
+            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            id="landlordResponsibility"
+            type="text"
+            name="maintenance.landlordResponsibility"
+            value={formData.maintenance.landlordResponsibility.join(", ")}
+            onChange={(e) =>
+              setFormData({
+                ...formData,
+                maintenance: {
+                  ...formData.maintenance,
+                  landlordResponsibility: e.target.value
+                    .split(",")
+                    .map((item) => item.trim()),
+                },
+              })
+            }
+            placeholder="Enter Landlord Responsibilities"
+          />
+        </div>
+        <div className="mb-4">
+          <label
+            className="block text-gray-700 text-sm font-bold mb-2"
+            htmlFor="tenantResponsibility"
+          >
+            Tenant Responsibilities (comma separated)
+          </label>
+          <input
+            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            id="tenantResponsibility"
+            type="text"
+            name="maintenance.tenantResponsibility"
+            value={formData.maintenance.tenantResponsibility.join(", ")}
+            onChange={(e) =>
+              setFormData({
+                ...formData,
+                maintenance: {
+                  ...formData.maintenance,
+                  tenantResponsibility: e.target.value
+                    .split(",")
+                    .map((item) => item.trim()),
+                },
+              })
+            }
+            placeholder="Enter Tenant Responsibilities"
+          />
+        </div>
+
+        <h3 className="text-xl font-bold mb-2">Rules</h3>
+        <div className="mb-4">
+          <label
+            className="block text-gray-700 text-sm font-bold mb-2"
+            htmlFor="petsAllowed"
+          >
+            Pets Alloweds
+          </label>
+          <input
+            checked={formData.rules.petsAllowed}
+            id="checked-checkbox"
+            name="rules.petsAllowed"
+            type="checkbox"
+            value="off"
+            className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+            onChange={handleChange}
+          />
+        </div>
+        <div className="mb-4">
+          <label
+            className="block text-gray-700 text-sm font-bold mb-2"
+            htmlFor="smokingAllowed"
+          >
+            Smoking Allowed
+          </label>
+          <input
+            className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+            id="smokingAllowed"
+            type="checkbox"
+            name="rules.smokingAllowed"
+            checked={formData.rules.smokingAllowed}
+            onChange={handleChange}
+          />
+        </div>
+        <div className="mb-4">
+          <label
+            className="block text-gray-700 text-sm font-bold mb-2"
+            htmlFor="sublettingAllowed"
+          >
+            Subletting Allowed
+          </label>
+          <input
+            className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+            id="sublettingAllowed"
+            type="checkbox"
+            name="rules.sublettingAllowed"
+            checked={formData.rules.sublettingAllowed}
+            onChange={handleChange}
           />
         </div>
 
@@ -788,24 +832,24 @@ const EmploymentAgreementForm = () => {
             onChange={handleChange}
             className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
           >
-            <option value={TerminationReasons.GrossMisconduct}>
+            <option value={terminationReasons.gross_misconduct}>
               Gross Misconduct
             </option>
-            <option value={TerminationReasons.ViolationOfCompanyPolicy}>
+            <option value={terminationReasons.violation_of_company_policy}>
               Violation of Company Policy
             </option>
-            <option value={TerminationReasons.Fraud}>Fraud</option>
-            <option value={TerminationReasons.PoorPerformance}>
+            <option value={terminationReasons.fraud}>Fraud</option>
+            <option value={terminationReasons.poor_performance}>
               Poor Performance
             </option>
-            <option value={TerminationReasons.Redundancy}>Redundancy</option>
-            <option value={TerminationReasons.MutualAgreement}>
+            <option value={terminationReasons.redundancy}>Redundancy</option>
+            <option value={terminationReasons.mutual_agreement}>
               Mutual Agreement
             </option>
-            <option value={TerminationReasons.ContractExpired}>
+            <option value={terminationReasons.contract_expired}>
               Contract Expired
             </option>
-            <option value={TerminationReasons.Other}>Other</option>
+            <option value={terminationReasons.other}>Other</option>
           </select>
         </div>
 
@@ -858,4 +902,4 @@ const EmploymentAgreementForm = () => {
   );
 };
 
-export default EmploymentAgreementForm;
+export default RentalAgreementForm;
