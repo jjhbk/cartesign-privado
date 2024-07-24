@@ -114,7 +114,7 @@ export type employmentAgreement = {
       amount: number;
     };
     benefits: {
-      healthInsuarance: boolean;
+      healthInsurance: boolean;
       retirementPlan: boolean;
       paidTimeOff: {
         days: number;

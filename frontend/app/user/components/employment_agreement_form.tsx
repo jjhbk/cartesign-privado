@@ -9,6 +9,7 @@ import {
   frequency,
   User,
 } from "@/app/components/types";
+import Signature from "./signaturepad";
 const EmploymentAgreementForm = () => {
   const [formData, setFormData] = useState<employmentAgreement>({
     agreementId: "",
@@ -52,7 +53,7 @@ const EmploymentAgreementForm = () => {
         amount: 0,
       },
       benefits: {
-        healthInsuarance: false,
+        healthInsurance: false,
         retirementPlan: false,
         paidTimeOff: {
           days: 0,
@@ -102,6 +103,7 @@ const EmploymentAgreementForm = () => {
   ) => {
     const { name, value, type } = e.target;
     console.log(name, value, type);
+
     const nameParts = name.split(".");
 
     const updateNestedState = (
@@ -110,6 +112,9 @@ const EmploymentAgreementForm = () => {
       newValue: any
     ): any => {
       if (parts.length === 1) {
+        if (type == "checkbox") {
+          newValue = !state[parts[0]];
+        }
         return {
           ...state,
           [parts[0]]: newValue,
@@ -125,24 +130,12 @@ const EmploymentAgreementForm = () => {
         ),
       };
     };
-    let checked_value = false;
-    if (type == "checkbox") {
-      if (value == "on") {
-        checked_value = true;
-      } else {
-        checked_value = false;
-      }
-    }
-    const newValue = type === "checkbox" ? checked_value : value;
-
-    setFormData((prevState) =>
-      updateNestedState(nameParts, prevState, newValue)
-    );
+    setFormData((prevState) => updateNestedState(nameParts, prevState, value));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log(formData);
+    console.log(JSON.stringify(formData));
   };
 
   return (
@@ -442,7 +435,7 @@ const EmploymentAgreementForm = () => {
             Full-time
           </label>
           <input
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
             id="positionFulltime"
             type="checkbox"
             name="position.fulltime"
@@ -518,7 +511,7 @@ const EmploymentAgreementForm = () => {
             Eligibility
           </label>
           <input
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
             id="bonusEligibility"
             type="checkbox"
             name="compensation.bonuses.eligibility"
@@ -570,11 +563,11 @@ const EmploymentAgreementForm = () => {
             Health Insurance
           </label>
           <input
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
             id="healthInsurance"
             type="checkbox"
             name="compensation.benefits.healthInsurance"
-            checked={formData.compensation.benefits.healthInsuarance}
+            checked={formData.compensation.benefits.healthInsurance}
             onChange={handleChange}
           />
         </div>
@@ -586,7 +579,7 @@ const EmploymentAgreementForm = () => {
             Retirement Plan
           </label>
           <input
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
             id="retirementPlan"
             type="checkbox"
             name="compensation.benefits.retirementPlan"
@@ -719,32 +712,7 @@ const EmploymentAgreementForm = () => {
           >
             Contractor Signature
           </label>
-          <input
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-            id="contractorSignature"
-            type="text"
-            name="Signatures.contractorSignature.name"
-            value={formData.signatures.contractorSignature.name}
-            onChange={handleChange}
-            placeholder="Enter Contractor Signature"
-          />
-        </div>
-        <div className="mb-4">
-          <label
-            className="block text-gray-700 text-sm font-bold mb-2"
-            htmlFor="contracteeSignature"
-          >
-            Contractee Signature
-          </label>
-          <input
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-            id="contracteeSignature"
-            type="text"
-            name="Signatures.contracteeSignature.name"
-            value={formData.signatures.contracteeSignature.name}
-            onChange={handleChange}
-            placeholder="Enter Contractee Signature"
-          />
+          <Signature />
         </div>
 
         <div className="flex items-center justify-between">

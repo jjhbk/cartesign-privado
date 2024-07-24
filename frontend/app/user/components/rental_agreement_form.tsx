@@ -8,6 +8,7 @@ import {
   terminationReasons,
   User,
 } from "@/app/components/types";
+import Signature from "./signaturepad";
 const RentalAgreementForm = () => {
   const [formData, setFormData] = useState<rentalAgreement>({
     agreementId: "",
@@ -143,7 +144,7 @@ const RentalAgreementForm = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log(formData);
+    console.log(JSON.stringify(formData));
   };
 
   return (
@@ -861,32 +862,7 @@ const RentalAgreementForm = () => {
           >
             Contractor Signature
           </label>
-          <input
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-            id="contractorSignature"
-            type="text"
-            name="signatures.contractorSignature.name"
-            value={formData.signatures.contractorSignature.name}
-            onChange={handleChange}
-            placeholder="Enter Contractor Signature"
-          />
-        </div>
-        <div className="mb-4">
-          <label
-            className="block text-gray-700 text-sm font-bold mb-2"
-            htmlFor="contracteeSignature"
-          >
-            Contractee Signature
-          </label>
-          <input
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-            id="contracteeSignature"
-            type="text"
-            name="signatures.contracteeSignature.name"
-            value={formData.signatures.contracteeSignature.name}
-            onChange={handleChange}
-            placeholder="Enter Contractee Signature"
-          />
+          <Signature />
         </div>
 
         <div className="flex items-center justify-between">

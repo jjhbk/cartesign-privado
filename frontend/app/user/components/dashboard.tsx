@@ -3,7 +3,7 @@ import { UserCircleIcon } from "@heroicons/react/24/outline";
 import { useWallets } from "@web3-onboard/react";
 import Signature from "./signaturepad";
 import { useEffect, useState } from "react";
-import { ContractStatus, contractType } from "@/app/components/types";
+import { ContractStatus, contractType, Status } from "@/app/components/types";
 import {
   LockClosedIcon,
   PlusCircleIcon,
@@ -11,16 +11,20 @@ import {
 } from "@heroicons/react/24/solid";
 import EmploymentAgreementForm from "./employment_agreement_form";
 import RentalAgreementForm from "./rental_agreement_form";
+import RentalAgreementCard from "./rental_agreement_card";
+import sample_rental_agreement from "./sample_rent_alagreement.json";
+import sample_employment_agreement from "./sample_employment_agreement.json";
+import EmploymentAgreementCard from "./employment_agreement_card";
 export default function Dashboard() {
   const [connectedWallet] = useWallets();
   console.log(connectedWallet.accounts);
-
+  const actionMap = ["", "Sign", "End", "Terminate", "View"];
   const fetchContracts = async (): Promise<ContractStatus[]> => {
     // Replace this with your actual API call
     const response = [
-      '{"id":"1","contractType":"Type A","status":"Active"}',
-      '{"id":"2","contractType":"Type B","status":"Pending"}',
-      '{"id":"3","contractType":"Type C","status":"Expired"}',
+      '{"id":"1","contractType":1,"status":1}',
+      '{"id":"2","contractType":2,"status":2}',
+      '{"id":"3","contractType":1,"status":3}',
     ];
 
     return response.map((item) => JSON.parse(item));
@@ -28,6 +32,9 @@ export default function Dashboard() {
 
   const [contracts, setContracts] = useState<ContractStatus[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isSignModalOpen, setIsSignModalOpen] = useState(false);
+  const [currentContract, setCurrentContract] = useState<ContractStatus>();
   const [selectedContractType, setSelectedContractType] =
     useState<contractType | null>(null);
   useEffect(() => {
@@ -37,7 +44,36 @@ export default function Dashboard() {
     };
     getContracts();
   }, []);
-
+  const handleViewAgreement = (contract: ContractStatus) => {
+    setIsViewModalOpen(true);
+    setSelectedContractType(contract.contractType);
+    console.log("viewing the document");
+  };
+  const handleSignAgreement = (contract: ContractStatus) => {
+    console.log("signing the document");
+  };
+  const handleEndAgreement = (contract: ContractStatus) => {
+    console.log("ending agreement");
+  };
+  const handleTerminateAgreement = (contract: ContractStatus) => {
+    console.log("terminating the agreement");
+  };
+  const handleAgreementAction = (contract: ContractStatus) => {
+    switch (actionMap[contract.status]) {
+      case "Sign":
+        handleSignAgreement(contract);
+        break;
+      case "End":
+        handleEndAgreement(contract);
+        break;
+      case "Terminate":
+        handleTerminateAgreement(contract);
+        break;
+      default:
+        handleViewAgreement(contract);
+        break;
+    }
+  };
   return (
     <div className="overflow-y-auto">
       <div className="container mx-auto p-6">
@@ -55,12 +91,30 @@ export default function Dashboard() {
             {contracts.map((contract) => (
               <tr key={contract.id}>
                 <td className="py-2 px-4 border">{contract.id}</td>
-                <td className="py-2 px-4 border">{contract.status}</td>
-                <td className="py-2 px-4 border">{contract.contractType}</td>
+                <td className="py-2 px-4 border">{Status[contract.status]}</td>
                 <td className="py-2 px-4 border">
-                  <button className="bg-green-500 hover:bg-green-700 text-white font-bold py-1 px-2 rounded">
-                    View
-                  </button>
+                  {contractType[contract.contractType]}
+                </td>
+                <td className="py-2 px-4 border">
+                  <div className="flex flex-row justify-between">
+                    <button
+                      onClick={() => {
+                        handleViewAgreement(contract);
+                      }}
+                      className=" bg-green-500 mx-2 px-5 hover:bg-green-700 text-white font-bold py-1 px-2 rounded"
+                    >
+                      View
+                    </button>
+                    <button
+                      onClick={() => {
+                        setCurrentContract(contract);
+                        setIsSignModalOpen(true);
+                      }}
+                      className="bg-sky-500 px-5 hover:bg-sky-700 text-white font-bold py-1 px-2 rounded"
+                    >
+                      {actionMap[contract.status]}
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -74,12 +128,13 @@ export default function Dashboard() {
           <PlusCircleIcon className="h-20 w-20 text-blue-500 stroke-slate-100 " />
         </button>
       </div>
+
       {isModalOpen && (
         <div className="fixed z-50 inset-0 overflow-y-auto">
           <div className="flex items-center justify-center min-h-screen">
             <div className="bg-cyan-200 rounded-lg overflow-hidden shadow-xl transform transition-all sm:max-w-lg sm:w-full">
               <div className="bg-cyan-300 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                <div className="sm:flex sm:items-start">
+                <div className="sm:flex sm:items-start justify-center">
                   <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
                     <div className="box-border bg-cyan-400 p-2 border-2 border-collapse  border-cyan-400 mt-3 flex flex-row justify-between text-center sm:mt-0 sm:ml-4 sm:text-left">
                       <h3
@@ -130,6 +185,103 @@ export default function Dashboard() {
                         className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
                       >
                         Cancel
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isViewModalOpen && (
+        <div className="fixed z-50 inset-0 overflow-y-auto">
+          <div className="flex items-center justify-center min-h-screen">
+            <div className="bg-cyan-200 rounded-lg overflow-hidden shadow-xl transform transition-all sm:max-w-lg sm:w-full">
+              <div className="bg-cyan-300 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <div className="sm:flex sm:items-start justify-center">
+                  <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                    <div className="mt-3 flex flex-row justify-between text-center sm:mt-0 sm:ml-4 sm:text-left">
+                      <h3
+                        className="text-lg leading-6 font-medium text-gray-900 self-center"
+                        id="modal-title"
+                      >
+                        Contract Details
+                      </h3>
+                      <XCircleIcon
+                        onClick={() => {
+                          setIsViewModalOpen(false);
+                          setSelectedContractType(null);
+                        }}
+                        className="h-8 w-8 hover:scale-150 stroke-slate-500"
+                      />
+                    </div>
+                    <div className="flex justify-center">
+                      {selectedContractType == contractType.employment ? (
+                        <EmploymentAgreementCard
+                          agreement={sample_employment_agreement}
+                        />
+                      ) : (
+                        <RentalAgreementCard
+                          agreement={sample_rental_agreement}
+                        />
+                      )}
+                    </div>
+                    <div className="flex items-center justify-between mt-4">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsViewModalOpen(false);
+                          setSelectedContractType(null);
+                        }}
+                        className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                      >
+                        Close
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isSignModalOpen && (
+        <div className="fixed z-50 inset-0 overflow-y-auto">
+          <div className="flex items-center justify-center min-h-screen">
+            <div className="bg-cyan-200 rounded-lg overflow-hidden shadow-xl transform transition-all sm:max-w-lg sm:w-full">
+              <div className="bg-cyan-300 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <div className="sm:flex sm:items-start justify-center">
+                  <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                    <div className="mt-3 flex flex-row justify-between text-center sm:mt-0 sm:ml-4 sm:text-left">
+                      <h3
+                        className="text-lg leading-6 font-medium text-gray-900 self-center"
+                        id="modal-title"
+                      >
+                        Sign Contract
+                      </h3>
+                      <XCircleIcon
+                        onClick={() => {
+                          setIsSignModalOpen(false);
+                        }}
+                        className="h-8 w-8 hover:scale-150 stroke-slate-500"
+                      />
+                    </div>
+                    <Signature />
+                    <div className="flex items-center justify-between mt-4">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (currentContract) {
+                            handleAgreementAction(currentContract);
+                          }
+                          setIsSignModalOpen(false);
+                        }}
+                        className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                      >
+                        Submit
                       </button>
                     </div>
                   </div>

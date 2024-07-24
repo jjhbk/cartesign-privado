@@ -20,6 +20,8 @@ import {
 const app = createApp({ url: "http://127.0.0.1:8080/host-runner" });
 const wallet = createWallet();
 const router = createRouter({ app });
+
+
 type ContractStatus = {
   id: string;
   contractType: contractType;
@@ -99,9 +101,8 @@ app.addAdvanceHandler(async (data) => {
       }
       case "addToWhiteList": {
         if (
-          getAddress(sender) !==
-          getAddress("0x0Fb484F2057e224D5f025B4bD5926669a5a32786")
-        ) {
+         ( getAddress(sender) ==
+          getAddress("0x0Fb484F2057e224D5f025B4bD5926669a5a32786") ) {
           const [user] = args;
 
           console.log(`adding ${user} to whitelist`);

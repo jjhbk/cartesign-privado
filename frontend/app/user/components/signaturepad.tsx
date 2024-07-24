@@ -14,35 +14,35 @@ export default function Signature() {
   };
   return (
     <div>
-      <div
-        style={{
-          backgroundColor: "white",
-          width: 250,
-          marginLeft: 50,
-          marginRight: 50,
-          alignItems: "center",
-          alignContent: "center",
-          alignSelf: "center",
-        }}
-        className="aspect-[3/1]"
-      >
-        <SignaturePad
-          ref={padRef}
-          canvasProps={{
-            className: "sigCanvas",
+      <div className="flex justify-center bg-slate-600 mb-2">
+        <div
+          style={{
+            backgroundColor: "white",
             width: 250,
-            height: 80,
-            color: "red",
+            margin: 10,
+            alignItems: "center",
+            alignContent: "center",
+            alignSelf: "center",
           }}
-        />
+          className="aspect-[3/1]"
+        >
+          <SignaturePad
+            ref={padRef}
+            canvasProps={{
+              className: "sigCanvas",
+              width: 250,
+              height: 80,
+            }}
+          />
+        </div>
       </div>
 
-      <div className="flex flex-row justify-normal">
+      <div className="flex flex-row justify-start mx-3">
         <button
-          className="bg-sky-500 rounded-md p-2 text-sm shadow-sm focus:outline-none focus:ring  hover:bg-sky-700"
+          className="bg-sky-500 rounded-md px-4 mx-4 p-2 shadow-sm focus:outline-none focus:ring  hover:bg-sky-700"
           onClick={trim}
         >
-          Register
+          Sign
         </button>
         <button
           className="bg-red-400 rounded-md p-2 text-sm shadow-sm hover:bg-red-600"
