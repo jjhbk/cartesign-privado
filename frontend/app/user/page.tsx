@@ -2,7 +2,7 @@
 import injectedModule from "@web3-onboard/injected-wallets";
 import { init, useWallets } from "@web3-onboard/react";
 import { ethers } from "ethers";
-import { hexToString } from "viem";
+import { getAddress, hexToString } from "viem";
 import { useState, useRef, FC, useEffect } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { useConnectWallet, useSetChain } from "@web3-onboard/react";
@@ -27,6 +27,7 @@ import { HomeIcon } from "@heroicons/react/24/solid";
 import Link from "next/link";
 import { Network } from "./components/network";
 import Dashboard from "./components/dashboard";
+import { sign } from "crypto";
 const config: any = configFile;
 const injected = injectedModule();
 
@@ -53,17 +54,40 @@ const dappAbi = parseAbi([
   "function addToWhiteList(address user)",
 ]);
 
+export const InspectCall = async (
+  path: string,
+  chainid: string
+): Promise<any> => {
+  let apiURL = "http://127.0.0.1:8080/inspect";
+  let payload;
+  if (config[chainid]?.inspectAPIURL) {
+    apiURL = `${config[chainid].inspectAPIURL}/inspect`;
+  } else {
+    console.error(`No inspect interface defined for chain ${chainid}`);
+    return new Error(`No inspect interface defined for chain ${chainid}`);
+  }
+
+  await fetch(`${apiURL}/${path}`)
+    .then((response) => response.json())
+    .then((data) => {
+      console.log("inspect result is:", data);
+      payload = JSON.parse(hexToString(data.reports[0]?.payload));
+    });
+  return payload;
+};
+
 export default function Home() {
   const [{ wallet, connecting }, connect, disconnect] = useConnectWallet();
   const [{ chains, connectedChain, settingChain }, setChain] = useSetChain();
-  const [qrvisible, setQrVisible] = useState(false);
   const [isWhiteListed, setIsWhiteListed] = useState(false);
   const [contracts, setContracts] = useState(undefined);
+  const [signer, setSigner] = useState<ethers.providers.JsonRpcSigner>();
+  const [provider, setProvider] = useState<ethers.providers.Web3Provider>();
   const [dappAddress, setDappAddress] = useState<string>(
     "0xab7528bb862fb57e8a2bcd567a2e929a0be56a5e"
   ); //"0x48383296da5f7Ce3408Cf98445289daF48488607"
   const [connectedWallet] = useWallets();
-  const addCustomInput = async (input: any) => {
+  const addCustomInput = async (input: any): Promise<any> => {
     const provider = new ethers.providers.Web3Provider(
       connectedWallet.provider
     );
@@ -74,58 +98,34 @@ export default function Home() {
     advanceInput(signer, dappAddress, input);
   };
 
-  const router = useRouter();
-
-  const inspectCall = async (path: string) => {
-    let apiURL = "http://127.0.0.1:8080/inspect";
+  const id = uuidv4();
+  const checkWhitelist = async (id: string) => {
     const provider = new ethers.providers.Web3Provider(
       connectedWallet.provider
     );
-    const signer = await provider.getSigner();
-    const address = await signer.getAddress();
-    console.log(`checking ${path} status`);
-    if (connectedChain) {
-      if (config[connectedChain.id]?.inspectAPIURL) {
-        apiURL = `${config[connectedChain.id].inspectAPIURL}/inspect`;
-      } else {
-        console.error(
-          `No inspect interface defined for chain ${connectedChain.id}`
-        );
-        return;
-      }
+    setProvider(provider);
+
+    const _signer = await provider.getSigner();
+    setSigner(signer);
+    const address = await _signer.getAddress();
+    console.log(_signer, address, id);
+
+    const payload = await InspectCall(`whiteList/${address}`, id);
+    console.log("payload is", payload);
+    if (payload?.result) {
+      console.log("whitelist status is:", payload?.result);
+
+      alert("You are a registered user on Cartesign");
+      setIsWhiteListed(true);
+    } else {
+      alert(
+        "you are not a registered user on Cartesign please verify your identity using Privado ID"
+      );
     }
-    let fetchData = fetch(`${apiURL}/${path}/${address}`);
-    fetchData
-      .then((response) => response.json())
-      .then((data) => {
-        console.log(data);
-        const payload = JSON.parse(hexToString(data.reports[0]?.payload));
-        if (path == "whitelist") {
-          if (payload?.result) {
-            console.log("whitelist status is:", payload?.result);
-
-            alert("You are a registered user on Cartesign");
-            setIsWhiteListed(true);
-          } else {
-            alert(
-              "you are not a registered user on Cartesign please verify your identity using Privado ID"
-            );
-          }
-        } else if (path == "contracts") {
-          console.log("contracts are:", payload?.result);
-          setContracts(payload?.result);
-        }
-      });
   };
-  const id = uuidv4();
-  const [qrcode, setQrcode] = useState("");
-
-  const cid = "bafybeib4p2flqhs2gqsgeygr5ugqusczdjz45prs3ssxzq7y7wdsa5oyo4";
-
   useEffect(() => {
-    if (connectedWallet) {
-      inspectCall("whitelist");
-      inspectCall("contracts");
+    if (connectedWallet && connectedChain) {
+      checkWhitelist(connectedChain.id);
     }
   }, [connectedWallet, isWhiteListed]);
   return (

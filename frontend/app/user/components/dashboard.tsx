@@ -1,8 +1,14 @@
 "use client";
-import { useWallets } from "@web3-onboard/react";
+import { useSetChain, useWallets } from "@web3-onboard/react";
 import Signature from "./signaturepad";
 import { useEffect, useState, useContext, createContext } from "react";
-import { ContractStatus, contractType, Status } from "@/app/components/types";
+import {
+  ContractStatus,
+  contractType,
+  employmentAgreement,
+  rentalAgreement,
+  Status,
+} from "@/app/components/types";
 import { PlusCircleIcon, XCircleIcon } from "@heroicons/react/24/solid";
 import EmploymentAgreementForm from "./employment_agreement_form";
 import RentalAgreementForm from "./rental_agreement_form";
@@ -10,6 +16,9 @@ import RentalAgreementCard from "./rental_agreement_card";
 import sample_rental_agreement from "./sample_rent_alagreement.json";
 import sample_employment_agreement from "./sample_employment_agreement.json";
 import EmploymentAgreementCard from "./employment_agreement_card";
+import { ethers } from "ethers";
+import { InspectCall } from "../page";
+import { ContractType } from "hardhat/internal/hardhat-network/stack-traces/model";
 export type SigContextType = {
   sigpadData: string;
   setSigpadData: (d: string) => void;
@@ -35,40 +44,57 @@ export const ModalContext = createContext<ModalContextType>({
   isModalOpen: false,
   setIsModalOpen: (d: boolean) => {},
 });
-export default function Dashboard() {
+export default function Dashboard(props: any) {
   const [connectedWallet] = useWallets();
-  console.log(connectedWallet.accounts);
+  const [{ connectedChain }] = useSetChain();
   const actionMap = ["", "Sign", "End", "Terminate", "View"];
   const [sigpadData, setSigpadData] = useState<string>("");
   const [finalFormData, setFinalFormData] = useState<any>({});
-  const fetchContracts = async (): Promise<ContractStatus[]> => {
-    // Replace this with your actual API call
-    const response = [
-      '{"id":"1","contractType":1,"status":1}',
-      '{"id":"2","contractType":2,"status":2}',
-      '{"id":"3","contractType":1,"status":3}',
-    ];
+  const provider = new ethers.providers.Web3Provider(connectedWallet.provider);
+  const fetchContracts = async (id: string) => {
+    const _signer = await provider.getSigner();
+    const address = await _signer.getAddress();
+    console.log(_signer, address, id);
+    const response = await InspectCall(`contracts/${address}`, id);
+    setContracts(response);
+    console.log("response is ", response);
+    return response;
+  };
 
-    return response.map((item) => JSON.parse(item));
+  const fetchSingleContract = async (contract_id: string, chainid: string) => {
+    const response = await InspectCall(`contract/${contract_id}`, chainid);
+    setContracts(response);
+    console.log("response is ", response);
+    return response;
   };
 
   const [contracts, setContracts] = useState<ContractStatus[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isSignModalOpen, setIsSignModalOpen] = useState(false);
-  const [currentContract, setCurrentContract] = useState<ContractStatus>();
+  const [currentContractStatus, setcurrentContractStatus] =
+    useState<ContractStatus>();
+  const [currentContract, setCurrentContract] = useState<
+    employmentAgreement | rentalAgreement
+  >();
   const [selectedContractType, setSelectedContractType] =
     useState<contractType | null>(null);
   useEffect(() => {
-    const getContracts = async () => {
-      const data = await fetchContracts();
-      setContracts(data);
-    };
-    getContracts();
-  }, []);
-  const handleViewAgreement = (contract: ContractStatus) => {
+    if (connectedChain) fetchContracts(connectedChain?.id);
+  }, [connectedWallet, connectedChain]);
+  const handleViewAgreement = async (contractstatus: ContractStatus) => {
+    if (!connectedChain) {
+      alert(`no chain connected`);
+      return;
+    }
     setIsViewModalOpen(true);
-    setSelectedContractType(contract.contractType);
+    setSelectedContractType(contractstatus.contractType);
+
+    const contract = await fetchSingleContract(
+      contractstatus.id,
+      connectedChain?.id
+    );
+    console.log(contract);
     console.log("viewing the document");
   };
   const handleSignAgreement = (contract: ContractStatus) => {
@@ -110,36 +136,40 @@ export default function Dashboard() {
             </tr>
           </thead>
           <tbody className="text-gray-700">
-            {contracts.map((contract) => (
-              <tr key={contract.id}>
-                <td className="py-2 px-4 border">{contract.id}</td>
-                <td className="py-2 px-4 border">{Status[contract.status]}</td>
-                <td className="py-2 px-4 border">
-                  {contractType[contract.contractType]}
-                </td>
-                <td className="py-2 px-4 border">
-                  <div className="flex flex-row justify-between">
-                    <button
-                      onClick={() => {
-                        handleViewAgreement(contract);
-                      }}
-                      className=" bg-green-500 mx-2 px-5 hover:bg-green-700 text-white font-bold py-1 px-2 rounded"
-                    >
-                      View
-                    </button>
-                    <button
-                      onClick={() => {
-                        setCurrentContract(contract);
-                        setIsSignModalOpen(true);
-                      }}
-                      className="bg-sky-500 px-5 hover:bg-sky-700 text-white font-bold py-1 px-2 rounded"
-                    >
-                      {actionMap[contract.status]}
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
+            {contracts.length > 0
+              ? contracts.map((_contractStatus) => (
+                  <tr key={_contractStatus.id}>
+                    <td className="py-2 px-4 border">{_contractStatus.id}</td>
+                    <td className="py-2 px-4 border">
+                      {Status[_contractStatus.status]}
+                    </td>
+                    <td className="py-2 px-4 border">
+                      {contractType[_contractStatus.contractType]}
+                    </td>
+                    <td className="py-2 px-4 border">
+                      <div className="flex flex-row justify-between">
+                        <button
+                          onClick={() => {
+                            handleViewAgreement(_contractStatus);
+                          }}
+                          className=" bg-green-500 mx-2 px-5 hover:bg-green-700 text-white font-bold py-1 px-2 rounded"
+                        >
+                          View
+                        </button>
+                        <button
+                          onClick={() => {
+                            setcurrentContractStatus(_contractStatus);
+                            setIsSignModalOpen(true);
+                          }}
+                          className="bg-sky-500 px-5 hover:bg-sky-700 text-white font-bold py-1 px-2 rounded"
+                        >
+                          {actionMap[_contractStatus.status]}
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              : "No contracts to display"}
           </tbody>
         </table>
 
@@ -254,11 +284,22 @@ export default function Dashboard() {
                     <div className="flex justify-center">
                       {selectedContractType == contractType.employment ? (
                         <EmploymentAgreementCard
-                          agreement={sample_employment_agreement}
+                          agreement={
+                            currentContract &&
+                            currentContract.contractType ===
+                              contractType.employment
+                              ? (currentContract as employmentAgreement)
+                              : sample_employment_agreement
+                          }
                         />
                       ) : (
                         <RentalAgreementCard
-                          agreement={sample_rental_agreement}
+                          agreement={
+                            currentContract &&
+                            currentContract.contractType === contractType.rental
+                              ? (currentContract as rentalAgreement)
+                              : sample_rental_agreement
+                          }
                         />
                       )}
                     </div>
@@ -312,8 +353,8 @@ export default function Dashboard() {
                       <button
                         type="button"
                         onClick={() => {
-                          if (currentContract) {
-                            handleAgreementAction(currentContract);
+                          if (currentContractStatus) {
+                            handleAgreementAction(currentContractStatus);
                           }
                           setIsSignModalOpen(false);
                         }}

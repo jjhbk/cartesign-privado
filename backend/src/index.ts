@@ -21,7 +21,6 @@ const app = createApp({ url: "http://127.0.0.1:8080/host-runner" });
 const wallet = createWallet();
 const router = createRouter({ app });
 
-
 type ContractStatus = {
   id: string;
   contractType: contractType;
@@ -44,6 +43,7 @@ router.add<{ address: string }>(
 router.add<{ address: string }>(
   "whitelist/:address",
   ({ params: { address } }) => {
+    console.log(address);
     return JSON.stringify({
       result: WhiteList.get(String(address)) != undefined,
     });
@@ -57,6 +57,12 @@ router.add<{ address: string }>(
     });
   }
 );
+
+router.add<{ id: string }>("contract/:id", ({ params: { id } }) => {
+  return JSON.stringify({
+    result: AllContracts.get(id),
+  });
+});
 
 const WhiteList = new Map<string, boolean>();
 WhiteList.set("0x70997970C51812dc3A010C7d01b50e0d17dc79C8", true);
@@ -101,8 +107,9 @@ app.addAdvanceHandler(async (data) => {
       }
       case "addToWhiteList": {
         if (
-         ( getAddress(sender) ==
-          getAddress("0x0Fb484F2057e224D5f025B4bD5926669a5a32786") ) {
+          getAddress(sender) ==
+          getAddress("0x0Fb484F2057e224D5f025B4bD5926669a5a32786")
+        ) {
           const [user] = args;
 
           console.log(`adding ${user} to whitelist`);
@@ -177,6 +184,19 @@ app.addAdvanceHandler(async (data) => {
         };
         list.add(JSON.stringify(contractdetails));
         contractsList.set(sender, list);
+
+        list = contractsList.get(contract.contractee.wallet);
+        if (!list) {
+          list = new Set();
+        }
+        contractdetails = {
+          id: contract.agreementId,
+          status: contract.status,
+          contractType: contract.contractType,
+        };
+        list.add(JSON.stringify(contractdetails));
+        contractsList.set(contract.contractee.wallet, list);
+
         app.createNotice({
           payload: stringToHex(
             `contract created with id ${contract.agreementId}:${JSON.stringify(
