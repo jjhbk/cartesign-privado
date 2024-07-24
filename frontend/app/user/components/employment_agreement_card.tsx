@@ -5,15 +5,33 @@ import {
   Status,
   terminationReasons,
 } from "@/app/components/types";
-import React from "react";
+import React, { useEffect, useState } from "react";
+import sample_employment_agreement from "./sample_employment_agreement.json";
+import { InspectCall } from "../page";
 
 interface EmploymentAgreementCardProps {
-  agreement: employmentAgreement;
+  agreementId: string | undefined;
+  chainId: string | null;
 }
 
 const EmploymentAgreementCard: React.FC<EmploymentAgreementCardProps> = ({
-  agreement,
+  agreementId,
+  chainId,
 }) => {
+  const [agreement, setAgreement] = useState(sample_employment_agreement);
+
+  const fetchSingleContract = async (contract_id: string, chainid: string) => {
+    console.log("fetching contract...");
+    const response = await InspectCall(`contract/${contract_id}`, chainid);
+    setAgreement(response);
+    console.log("response is ", response);
+    return response;
+  };
+  useEffect(() => {
+    if (agreementId && chainId != null) {
+      fetchSingleContract(agreementId, chainId);
+    }
+  }, [agreement]);
   const currencySymbol = (_currency: currency) => {
     switch (_currency) {
       case currency.USD:

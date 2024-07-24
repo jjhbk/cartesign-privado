@@ -98,7 +98,6 @@ export default function Home() {
     advanceInput(signer, dappAddress, input);
   };
 
-  const id = uuidv4();
   const checkWhitelist = async (id: string) => {
     const provider = new ethers.providers.Web3Provider(
       connectedWallet.provider

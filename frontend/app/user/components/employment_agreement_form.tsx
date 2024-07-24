@@ -15,13 +15,18 @@ import {
   ModalContext,
   SignaturepadContext,
 } from "./dashboard";
+import { v4 as uuidv4 } from "uuid";
+import { useConnectWallet, useWallets } from "@web3-onboard/react";
+import { ethers } from "ethers";
 const EmploymentAgreementForm = () => {
+  const [connectedWallet] = useWallets();
+  const { sigpadData } = useContext(SignaturepadContext);
   const { finalFormData, setFinalFormData } = useContext(FormDataContext);
   const { isModalOpen, setIsModalOpen } = useContext(ModalContext);
   const [formData, setFormData] = useState<employmentAgreement>({
-    agreementId: "",
+    agreementId: uuidv4(),
     contractType: contractType.rental,
-    contractCreator: "",
+    contractCreator: String(connectedWallet.accounts[0].address),
     status: Status.inActive,
     contractor: {
       name: "",
@@ -30,7 +35,7 @@ const EmploymentAgreementForm = () => {
         phone: "",
         email: "",
       },
-      wallet: "",
+      wallet: String(connectedWallet.accounts[0].address),
     },
     contractee: {
       name: "",
@@ -140,9 +145,27 @@ const EmploymentAgreementForm = () => {
     setFormData((prevState) => updateNestedState(nameParts, prevState, value));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     console.log(JSON.stringify(formData));
+    formData.signatures.contractorSignature.name = formData.contractor.name;
+    if (!sigpadData) {
+      alert(`signature is required to submit to the Dapp`);
+      return;
+    }
+    formData.signatures.contractorSignature.physical_signature = sigpadData;
+    const provider = new ethers.providers.Web3Provider(
+      connectedWallet.provider
+    );
+    const signer = await provider.getSigner();
+    const dig_sig = await signer.signMessage(sigpadData);
+    console.log(
+      "digital signature is",
+      dig_sig,
+      "physical signature is:",
+      sigpadData
+    );
+    formData.signatures.contractorSignature.digital_signature = dig_sig;
     setFinalFormData(formData);
     setIsModalOpen(false);
   };
@@ -165,13 +188,14 @@ const EmploymentAgreementForm = () => {
             Agreement ID
           </label>
           <input
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            className="shadow   appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
             id="agreementId"
             type="text"
             name="agreementId"
             value={formData.agreementId}
             onChange={handleChange}
             placeholder="Enter Agreement ID"
+            disabled
           />
         </div>
 
@@ -208,6 +232,7 @@ const EmploymentAgreementForm = () => {
             value={formData.contractCreator}
             onChange={handleChange}
             placeholder="Enter Contract Creator"
+            disabled
           />
         </div>
 
@@ -229,7 +254,9 @@ const EmploymentAgreementForm = () => {
           </select>
         </div>
 
-        <h3 className="text-xl font-bold mb-2">Contractor Information</h3>
+        <h3 className="text-xl text-slate-700 font-bold mb-2">
+          Contractor Information
+        </h3>
         <div className="mb-4">
           <label
             className="block text-gray-700 text-sm font-bold mb-2"
@@ -257,11 +284,13 @@ const EmploymentAgreementForm = () => {
           <input
             className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
             id="contractorPhone"
-            type="text"
+            pattern="[0-9]{3}-[0-9]{3}-[0-9]{4}"
+            placeholder="123-456-7890"
+            type="tel"
             name="contractor.contact.phone"
             value={formData.contractor.contact.phone}
             onChange={handleChange}
-            placeholder="Enter Contractor Phone"
+            required={true}
           />
         </div>
         <div className="mb-4">
@@ -278,7 +307,7 @@ const EmploymentAgreementForm = () => {
             name="contractor.contact.email"
             value={formData.contractor.contact.email}
             onChange={handleChange}
-            placeholder="Enter Contractor Email"
+            placeholder="name@cartesi.io"
           />
         </div>
         <div className="mb-4">
@@ -299,7 +328,9 @@ const EmploymentAgreementForm = () => {
           />
         </div>
 
-        <h3 className="text-xl font-bold mb-2">Contractee Information</h3>
+        <h3 className="text-xl text-slate-700 font-bold mb-2">
+          Contractee Information
+        </h3>
         <div className="mb-4">
           <label
             className="block text-gray-700 text-sm font-bold mb-2"
@@ -327,11 +358,12 @@ const EmploymentAgreementForm = () => {
           <input
             className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
             id="contracteePhone"
-            type="text"
+            pattern="[0-9]{3}-[0-9]{3}-[0-9]{4}"
+            placeholder="123-456-7890"
+            type="tel"
             name="contractee.contact.phone"
             value={formData.contractee.contact.phone}
             onChange={handleChange}
-            placeholder="Enter Contractee Phone"
           />
         </div>
         <div className="mb-4">
@@ -348,7 +380,7 @@ const EmploymentAgreementForm = () => {
             name="contractee.contact.email"
             value={formData.contractee.contact.email}
             onChange={handleChange}
-            placeholder="Enter Contractee Email"
+            placeholder="jj@cartesi.io"
           />
         </div>
         <div className="mb-4">
@@ -369,7 +401,9 @@ const EmploymentAgreementForm = () => {
           />
         </div>
 
-        <h3 className="text-xl font-bold mb-2">Position Information</h3>
+        <h3 className="text-xl text-slate-700 font-bold mb-2">
+          Position Information
+        </h3>
         <div className="mb-4">
           <label
             className="block text-gray-700 text-sm font-bold mb-2"
@@ -453,7 +487,9 @@ const EmploymentAgreementForm = () => {
           />
         </div>
 
-        <h3 className="text-xl font-bold mb-2">Compensation Information</h3>
+        <h3 className="text-xl text-slate-700 font-bold mb-2">
+          Compensation Information
+        </h3>
         <div className="mb-4">
           <label
             className="block text-gray-700 text-sm font-bold mb-2"
@@ -511,7 +547,7 @@ const EmploymentAgreementForm = () => {
           </select>
         </div>
 
-        <h3 className="text-xl font-bold mb-2">Bonuses</h3>
+        <h3 className="text-xl text-slate-700 font-bold mb-2">Bonuses</h3>
         <div className="mb-4">
           <label
             className="block text-gray-700 text-sm font-bold mb-2"
@@ -563,7 +599,7 @@ const EmploymentAgreementForm = () => {
           />
         </div>
 
-        <h3 className="text-xl font-bold mb-2">Benefits</h3>
+        <h3 className="text-xl text-slate-700 font-bold mb-2">Benefits</h3>
         <div className="mb-4">
           <label
             className="block text-gray-700 text-sm font-bold mb-2"
@@ -634,7 +670,9 @@ const EmploymentAgreementForm = () => {
           </select>
         </div>
 
-        <h3 className="text-xl font-bold mb-2">Responsibilities</h3>
+        <h3 className="text-xl text-slate-700 font-bold mb-2">
+          Responsibilities
+        </h3>
         <div className="mb-4">
           <label
             className="block text-gray-700 text-sm font-bold mb-2"
@@ -660,7 +698,9 @@ const EmploymentAgreementForm = () => {
           />
         </div>
 
-        <h3 className="text-xl font-bold mb-2">Termination Information</h3>
+        <h3 className="text-xl text-slate-700 font-bold mb-2">
+          Termination Information
+        </h3>
         <div className="mb-4">
           <label
             className="block text-gray-700 text-sm font-bold mb-2"
@@ -714,7 +754,7 @@ const EmploymentAgreementForm = () => {
         </div>
       </form>
       <div className="bg-white flex justify-center flex-col shadow-md rounded px-8 pb-8 mb-4">
-        <h3 className="text-xl pb-4 justify-self-center self-center dark:text-slate-600 font-bold ">
+        <h3 className="text-xl pb-4 justify-self-center self-center text-slate-700 dark:text-slate-600 font-bold ">
           Signatures
         </h3>
         <div className="mb-4">
@@ -725,6 +765,14 @@ const EmploymentAgreementForm = () => {
             Contractor Signature
           </label>
           <Signature />
+          <input
+            className="shadow mt-2  appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            id="signature"
+            type="text"
+            value={sigpadData}
+            placeholder="your signature"
+            required
+          />
         </div>
 
         <div className="flex items-center justify-between">

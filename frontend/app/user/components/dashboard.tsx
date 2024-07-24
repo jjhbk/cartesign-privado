@@ -14,7 +14,6 @@ import EmploymentAgreementForm from "./employment_agreement_form";
 import RentalAgreementForm from "./rental_agreement_form";
 import RentalAgreementCard from "./rental_agreement_card";
 import sample_rental_agreement from "./sample_rent_alagreement.json";
-import sample_employment_agreement from "./sample_employment_agreement.json";
 import EmploymentAgreementCard from "./employment_agreement_card";
 import { ethers } from "ethers";
 import { InspectCall } from "../page";
@@ -61,13 +60,6 @@ export default function Dashboard(props: any) {
     return response;
   };
 
-  const fetchSingleContract = async (contract_id: string, chainid: string) => {
-    const response = await InspectCall(`contract/${contract_id}`, chainid);
-    setContracts(response);
-    console.log("response is ", response);
-    return response;
-  };
-
   const [contracts, setContracts] = useState<ContractStatus[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
@@ -89,13 +81,7 @@ export default function Dashboard(props: any) {
     }
     setIsViewModalOpen(true);
     setSelectedContractType(contractstatus.contractType);
-
-    const contract = await fetchSingleContract(
-      contractstatus.id,
-      connectedChain?.id
-    );
-    console.log(contract);
-    console.log("viewing the document");
+    setcurrentContractStatus(contractstatus);
   };
   const handleSignAgreement = (contract: ContractStatus) => {
     console.log("signing the document");
@@ -284,22 +270,16 @@ export default function Dashboard(props: any) {
                     <div className="flex justify-center">
                       {selectedContractType == contractType.employment ? (
                         <EmploymentAgreementCard
-                          agreement={
-                            currentContract &&
-                            currentContract.contractType ===
-                              contractType.employment
-                              ? (currentContract as employmentAgreement)
-                              : sample_employment_agreement
+                          chainId={
+                            connectedChain != null
+                              ? connectedChain.id
+                              : "0x7a69"
                           }
+                          agreementId={currentContractStatus?.id}
                         />
                       ) : (
                         <RentalAgreementCard
-                          agreement={
-                            currentContract &&
-                            currentContract.contractType === contractType.rental
-                              ? (currentContract as rentalAgreement)
-                              : sample_rental_agreement
-                          }
+                          agreement={currentContract as rentalAgreement}
                         />
                       )}
                     </div>
