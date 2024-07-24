@@ -1,24 +1,46 @@
 "use client";
-import { UserCircleIcon } from "@heroicons/react/24/outline";
 import { useWallets } from "@web3-onboard/react";
 import Signature from "./signaturepad";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useContext, createContext } from "react";
 import { ContractStatus, contractType, Status } from "@/app/components/types";
-import {
-  LockClosedIcon,
-  PlusCircleIcon,
-  XCircleIcon,
-} from "@heroicons/react/24/solid";
+import { PlusCircleIcon, XCircleIcon } from "@heroicons/react/24/solid";
 import EmploymentAgreementForm from "./employment_agreement_form";
 import RentalAgreementForm from "./rental_agreement_form";
 import RentalAgreementCard from "./rental_agreement_card";
 import sample_rental_agreement from "./sample_rent_alagreement.json";
 import sample_employment_agreement from "./sample_employment_agreement.json";
 import EmploymentAgreementCard from "./employment_agreement_card";
+export type SigContextType = {
+  sigpadData: string;
+  setSigpadData: (d: string) => void;
+};
+export type FormDataContextType = {
+  finalFormData: any;
+  setFinalFormData: (d: any) => void;
+};
+export type ModalContextType = {
+  isModalOpen: boolean;
+  setIsModalOpen: (d: boolean) => void;
+};
+export const SignaturepadContext = createContext<SigContextType>({
+  sigpadData: "",
+  setSigpadData: (d: string) => {},
+});
+export const FormDataContext = createContext<FormDataContextType>({
+  finalFormData: {},
+  setFinalFormData: (d: any) => {},
+});
+
+export const ModalContext = createContext<ModalContextType>({
+  isModalOpen: false,
+  setIsModalOpen: (d: boolean) => {},
+});
 export default function Dashboard() {
   const [connectedWallet] = useWallets();
   console.log(connectedWallet.accounts);
   const actionMap = ["", "Sign", "End", "Terminate", "View"];
+  const [sigpadData, setSigpadData] = useState<string>("");
+  const [finalFormData, setFinalFormData] = useState<any>({});
   const fetchContracts = async (): Promise<ContractStatus[]> => {
     // Replace this with your actual API call
     const response = [
@@ -153,28 +175,40 @@ export default function Dashboard() {
                     </div>
                     <div className="mt-2 flex flex-row justify-evenly">
                       <button
-                        onClick={() =>
-                          setSelectedContractType(contractType.employment)
-                        }
+                        onClick={() => {
+                          setSelectedContractType(contractType.employment);
+                        }}
                         className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mr-4"
                       >
                         Employment
                       </button>
                       <button
-                        onClick={() =>
-                          setSelectedContractType(contractType.rental)
-                        }
+                        onClick={() => {
+                          setSelectedContractType(contractType.rental);
+                        }}
                         className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
                       >
                         Rental
                       </button>
                     </div>
-                    {selectedContractType !== null &&
-                    selectedContractType == contractType.employment ? (
-                      <EmploymentAgreementForm />
-                    ) : (
-                      <RentalAgreementForm />
-                    )}
+                    <FormDataContext.Provider
+                      value={{ finalFormData, setFinalFormData }}
+                    >
+                      <SignaturepadContext.Provider
+                        value={{ sigpadData, setSigpadData }}
+                      >
+                        <ModalContext.Provider
+                          value={{ isModalOpen, setIsModalOpen }}
+                        >
+                          {selectedContractType !== null &&
+                          selectedContractType == contractType.employment ? (
+                            <EmploymentAgreementForm />
+                          ) : (
+                            <RentalAgreementForm />
+                          )}
+                        </ModalContext.Provider>
+                      </SignaturepadContext.Provider>
+                    </FormDataContext.Provider>
                     <div className="flex items-center justify-between mt-4">
                       <button
                         type="button"
@@ -184,7 +218,7 @@ export default function Dashboard() {
                         }}
                         className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
                       >
-                        Cancel
+                        Close
                       </button>
                     </div>
                   </div>
@@ -269,7 +303,11 @@ export default function Dashboard() {
                         className="h-8 w-8 hover:scale-150 stroke-slate-500"
                       />
                     </div>
-                    <Signature />
+                    <SignaturepadContext.Provider
+                      value={{ sigpadData, setSigpadData }}
+                    >
+                      <Signature />
+                    </SignaturepadContext.Provider>
                     <div className="flex items-center justify-between mt-4">
                       <button
                         type="button"
@@ -291,6 +329,13 @@ export default function Dashboard() {
           </div>
         </div>
       )}
+      <button
+        onClick={() =>
+          console.log("the details are", finalFormData, sigpadData)
+        }
+      >
+        Get Details
+      </button>
     </div>
   );
 }

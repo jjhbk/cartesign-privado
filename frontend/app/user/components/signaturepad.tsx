@@ -1,5 +1,6 @@
 import SignaturePad from "react-signature-canvas";
-import { useRef, useState } from "react";
+import { useContext, useRef, useState } from "react";
+import { SignaturepadContext } from "./dashboard";
 export default function Signature() {
   let padRef: any = useRef({});
   const [dataURL, setDataURL] = useState("");
@@ -10,8 +11,10 @@ export default function Signature() {
     var url = "";
     url = padRef.current?.getCanvas().toDataURL("image/png");
     setDataURL(url);
+    setSigpadData(url);
     console.log(url);
   };
+  let { setSigpadData } = useContext(SignaturepadContext);
   return (
     <div>
       <div className="flex justify-center bg-slate-600 mb-2">

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useContext, useState } from "react";
 
 import {
   employmentAgreement,
@@ -10,7 +10,14 @@ import {
   User,
 } from "@/app/components/types";
 import Signature from "./signaturepad";
+import {
+  FormDataContext,
+  ModalContext,
+  SignaturepadContext,
+} from "./dashboard";
 const EmploymentAgreementForm = () => {
+  const { finalFormData, setFinalFormData } = useContext(FormDataContext);
+  const { isModalOpen, setIsModalOpen } = useContext(ModalContext);
   const [formData, setFormData] = useState<employmentAgreement>({
     agreementId: "",
     contractType: contractType.rental,
@@ -136,6 +143,8 @@ const EmploymentAgreementForm = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     console.log(JSON.stringify(formData));
+    setFinalFormData(formData);
+    setIsModalOpen(false);
   };
 
   return (
@@ -703,8 +712,11 @@ const EmploymentAgreementForm = () => {
             <option value={terminationReasons.other}>other</option>
           </select>
         </div>
-
-        <h3 className="text-xl font-bold mb-2">Signatures</h3>
+      </form>
+      <div className="bg-white flex justify-center flex-col shadow-md rounded px-8 pb-8 mb-4">
+        <h3 className="text-xl pb-4 justify-self-center self-center dark:text-slate-600 font-bold ">
+          Signatures
+        </h3>
         <div className="mb-4">
           <label
             className="block text-gray-700 text-sm font-bold mb-2"
@@ -717,13 +729,14 @@ const EmploymentAgreementForm = () => {
 
         <div className="flex items-center justify-between">
           <button
+            onClick={handleSubmit}
             className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
             type="submit"
           >
             Submit
           </button>
         </div>
-      </form>
+      </div>
     </div>
   );
 };

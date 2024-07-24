@@ -140,7 +140,7 @@ export default function Home() {
             Cartesi-Privado Verifier
           </h1>
           <Link href={"/"}>
-            <HomeIcon className="h-20 w-20 text-blue-300 " />
+            <HomeIcon className="h-20 w-20 active:scale-110 text-blue-300 " />
           </Link>
         </div>
 
