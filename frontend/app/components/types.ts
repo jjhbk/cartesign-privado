@@ -45,7 +45,6 @@ export type User = {
 };
 
 export type Signature = {
-  name: string;
   timestamp: number;
   physical_signature: string;
   digital_signature: string;

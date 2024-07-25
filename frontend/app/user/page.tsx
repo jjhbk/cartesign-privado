@@ -71,11 +71,19 @@ export const InspectCall = async (
     .then((response) => response.json())
     .then((data) => {
       console.log("inspect result is:", data);
-      payload = JSON.parse(hexToString(data.reports[0]?.payload));
+      payload = hexToString(data.reports[0]?.payload);
     });
   return payload;
 };
 
+export const DappAbi = parseAbi([
+  "function checkWhiteList(address user)",
+  "function addToWhiteList(address user)",
+  "function createAgreement(string agreement)",
+  "function acceptAgreement(string id,string signature)",
+  "function endAgreement(string id,string signature,uint32 reason)",
+  "function terminateAgreement(string id,string signature)",
+]);
 export default function Home() {
   const [{ wallet, connecting }, connect, disconnect] = useConnectWallet();
   const [{ chains, connectedChain, settingChain }, setChain] = useSetChain();
@@ -111,8 +119,8 @@ export default function Home() {
 
     const payload = await InspectCall(`whiteList/${address}`, id);
     console.log("payload is", payload);
-    if (payload?.result) {
-      console.log("whitelist status is:", payload?.result);
+    if (JSON.parse(payload)?.result) {
+      console.log("whitelist status is:", JSON.parse(payload)?.result);
 
       alert("You are a registered user on Cartesign");
       setIsWhiteListed(true);
@@ -146,14 +154,15 @@ export default function Home() {
         <div className="p-6">
           <Network />
           <br />
-
+          <Notice />
+          <Report />
           {!isWhiteListed && connectedWallet && (
             <div>
               <Modal dapp={dappAddress} show={!isWhiteListed} />
             </div>
           )}
         </div>
-        {isWhiteListed && connectedWallet && <Dashboard />}
+        {isWhiteListed && connectedWallet && <Dashboard dapp={dappAddress} />}
       </div>
     </div>
   );

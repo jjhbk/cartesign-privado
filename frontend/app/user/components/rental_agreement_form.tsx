@@ -80,13 +80,11 @@ const RentalAgreementForm = () => {
       reason: terminationReasons.other,
       Signatures: {
         contractor: {
-          name: "",
           timestamp: Date.now(),
           physical_signature: "",
           digital_signature: "",
         },
         contractee: {
-          name: "",
           timestamp: Date.now(),
           physical_signature: "",
           digital_signature: "",
@@ -95,13 +93,11 @@ const RentalAgreementForm = () => {
     },
     signatures: {
       contractorSignature: {
-        name: "",
         timestamp: Date.now(),
         physical_signature: "",
         digital_signature: "",
       },
       contracteeSignature: {
-        name: "",
         timestamp: Date.now(),
         physical_signature: "",
         digital_signature: "",

@@ -5,6 +5,7 @@ import {
   stringToHex,
   getAddress,
   verifyMessage,
+  stringToBytes,
 } from "viem";
 import { createRouter } from "@deroll/router";
 import { createWallet } from "@deroll/wallet";
@@ -17,7 +18,10 @@ import {
   termination,
 } from "./types";
 // create application
-const app = createApp({ url: "http://127.0.0.1:8080/host-runner" });
+const app = createApp({
+  url:
+    process.env.ROLLUP_HTTP_SERVER_URL || "http://127.0.0.1:8080/host-runner",
+});
 const wallet = createWallet();
 const router = createRouter({ app });
 
@@ -31,7 +35,7 @@ let AllContracts: Map<string, employmentAgreement | rentalAgreement> =
   new Map();
 
 //let contractStatus: Map<string, ContractStatus> = new Map();
-let contractsList: Map<string, Set<String>> = new Map();
+let contractsList: Map<string, Set<ContractStatus>> = new Map();
 router.add<{ address: string }>(
   "wallet/:address",
   ({ params: { address } }) => {
@@ -52,17 +56,48 @@ router.add<{ address: string }>(
 router.add<{ address: string }>(
   "contracts/:address",
   ({ params: { address } }) => {
-    return JSON.stringify({
-      result: contractsList.get(String(address)),
-    });
+    if (contractsList.has(address)) {
+      // Retrieve the Set from the Map
+      const contractSet = contractsList.get(address);
+
+      if (contractSet) {
+        // Convert the Set to an array
+        const contractArray = Array.from(contractSet);
+        // Convert the array to a JSON string
+        const jsonString = JSON.stringify(contractArray);
+
+        // Send the JSON string as a response
+        return jsonString;
+      } else {
+        console.log(' error: "no data found for this addres"');
+        return JSON.stringify({});
+      }
+    }
+    console.log(' error: "no data set found for this addres"');
+    return JSON.stringify({});
   }
 );
+router.add<{}>("allcontracts", ({}) => {
+  console.log(mapToJson);
+  console.log(JSON.stringify(contractsList));
+  return mapToJson(contractsList);
+});
 
 router.add<{ id: string }>("contract/:id", ({ params: { id } }) => {
   return JSON.stringify({
     result: AllContracts.get(id),
   });
 });
+
+function mapToJson(map: Map<string, Set<ContractStatus>>): string {
+  // Convert the Map to an array of key-value pairs
+  const array = Array.from(map.entries(), ([key, value]) => [
+    key,
+    Array.from(value),
+  ]);
+  // Convert the array to a JSON string
+  return JSON.stringify(array);
+}
 
 const WhiteList = new Map<string, boolean>();
 WhiteList.set("0x70997970C51812dc3A010C7d01b50e0d17dc79C8", true);
@@ -127,23 +162,25 @@ app.addAdvanceHandler(async (data) => {
         return "reject";
       }
       case "createAgreement": {
-        if (!WhiteList.get(String(sender))) {
+        /* if (!WhiteList.get(String(sender))) {
           app.createReport({
             payload: stringToHex(
               `user: ${sender} is not whitelisted please verify your identity first using privado ID`
             ),
           });
           return "reject";
-        }
+        }*/
         const [agreement] = args;
+
         let contract: employmentAgreement = JSON.parse(agreement);
         const valid = await verifyMessage({
           address: getAddress(String(contract.contractCreator)),
           message: contract.signatures.contractorSignature.physical_signature,
-          signature: stringToHex(
-            String(contract.signatures.contractorSignature.digital_signature)
+          signature: <`0x${string}`>(
+            contract.signatures.contractorSignature.digital_signature
           ),
         });
+        console.log("creating and agreement", agreement, valid);
 
         if (
           getAddress(String(contract.contractCreator)) !== getAddress(sender) ||
@@ -173,8 +210,8 @@ app.addAdvanceHandler(async (data) => {
           contractType: contract.contractType,
           status: Status.inProcess,
         });*/
-        let list = contractsList.get(sender);
-        if (!list) {
+        let list = contractsList.get(getAddress(sender).toString());
+        if (!list || list?.size == 0) {
           list = new Set();
         }
         let contractdetails: ContractStatus = {
@@ -182,20 +219,19 @@ app.addAdvanceHandler(async (data) => {
           status: contract.status,
           contractType: contract.contractType,
         };
-        list.add(JSON.stringify(contractdetails));
-        contractsList.set(sender, list);
 
-        list = contractsList.get(contract.contractee.wallet);
-        if (!list) {
-          list = new Set();
+        list.add(contractdetails);
+        contractsList.set(getAddress(sender).toString(), list);
+        console.log(list, contractsList, sender, contract.contractee.wallet);
+
+        let list1 = contractsList.get(contract.contractee.wallet);
+        if (!list1 || list1?.size == 0) {
+          list1 = new Set();
         }
-        contractdetails = {
-          id: contract.agreementId,
-          status: contract.status,
-          contractType: contract.contractType,
-        };
-        list.add(JSON.stringify(contractdetails));
-        contractsList.set(contract.contractee.wallet, list);
+
+        list1.add(contractdetails);
+        contractsList.set(contract.contractee.wallet, list1);
+        console.log(list1, contractsList);
 
         app.createNotice({
           payload: stringToHex(
@@ -243,7 +279,7 @@ app.addAdvanceHandler(async (data) => {
         const valid = await verifyMessage({
           address: getAddress(String(signing_contract.contractee.wallet)),
           message: signature.physical_signature,
-          signature: stringToHex(String(signature.digital_signature)),
+          signature: <`0x${string}`>signature.digital_signature,
         });
         if (!valid) {
           app.createReport({
@@ -261,7 +297,7 @@ app.addAdvanceHandler(async (data) => {
         //   cstatus.status = Status.active;
         //     contractStatus.set(signing_contract.agreementId, cstatus);
         let list = contractsList.get(sender);
-        if (!list) {
+        if (!list || list?.size == 0) {
           list = new Set();
         }
         let contractdetails: ContractStatus = {
@@ -269,7 +305,7 @@ app.addAdvanceHandler(async (data) => {
           status: signing_contract.status,
           contractType: signing_contract.contractType,
         };
-        list.add(JSON.stringify(contractdetails));
+        list.add(contractdetails);
 
         contractsList.set(sender, list);
 
@@ -315,7 +351,7 @@ app.addAdvanceHandler(async (data) => {
             String(contractor_end_agreement.contractor.wallet)
           ),
           message: signature.physical_signature,
-          signature: stringToHex(String(signature.digital_signature)),
+          signature: <`0x${string}`>signature.digital_signature,
         });
         if (!valid) {
           app.createReport({
@@ -370,7 +406,7 @@ app.addAdvanceHandler(async (data) => {
         const valid = await verifyMessage({
           address: getAddress(String(terminate_agreement.contractee.wallet)),
           message: signature.physical_signature,
-          signature: stringToHex(String(signature.digital_signature)),
+          signature: <`0x${string}`>signature.digital_signature,
         });
         if (!valid) {
           app.createReport({
@@ -400,6 +436,8 @@ app.addAdvanceHandler(async (data) => {
         return "accept";
     }
   } catch (e) {
+    console.log("error is", e);
+    app.createReport({ payload: stringToHex(String(e)) });
     return "reject";
   }
 });

@@ -43,8 +43,10 @@ export const ModalContext = createContext<ModalContextType>({
   isModalOpen: false,
   setIsModalOpen: (d: boolean) => {},
 });
+
 export default function Dashboard(props: any) {
   const [connectedWallet] = useWallets();
+
   const [{ connectedChain }] = useSetChain();
   const actionMap = ["", "Sign", "End", "Terminate", "View"];
   const [sigpadData, setSigpadData] = useState<string>("");
@@ -54,11 +56,20 @@ export default function Dashboard(props: any) {
     const _signer = await provider.getSigner();
     const address = await _signer.getAddress();
     console.log(_signer, address, id);
-    const response = await InspectCall(`contracts/${address}`, id);
-    setContracts(response);
+    const response = await InspectCall(`allcontracts`, id);
+    console.log(response);
+    const all_contracts = parseMap(response);
+    console.log("all contracts", all_contracts);
+    setContracts([]);
     console.log("response is ", response);
     return response;
   };
+  function parseMap(jsonStr: string): Map<string, Set<string>> {
+    // Parse JSON string to an array
+    const array: [string, string[]][] = JSON.parse(jsonStr);
+    // Convert array to a Map with Set values
+    return new Map(array.map(([key, value]) => [key, new Set(value)]));
+  }
 
   const [contracts, setContracts] = useState<ContractStatus[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -218,7 +229,7 @@ export default function Dashboard(props: any) {
                         >
                           {selectedContractType !== null &&
                           selectedContractType == contractType.employment ? (
-                            <EmploymentAgreementForm />
+                            <EmploymentAgreementForm dapp={props.dapp} />
                           ) : (
                             <RentalAgreementForm />
                           )}

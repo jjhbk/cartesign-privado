@@ -18,7 +18,10 @@ import {
 import { v4 as uuidv4 } from "uuid";
 import { useConnectWallet, useWallets } from "@web3-onboard/react";
 import { ethers } from "ethers";
-const EmploymentAgreementForm = () => {
+import { advanceInput } from "cartesi-client";
+import { DappAbi } from "../page";
+import { encodeFunctionData } from "viem";
+const EmploymentAgreementForm = (props: any) => {
   const [connectedWallet] = useWallets();
   const { sigpadData } = useContext(SignaturepadContext);
   const { finalFormData, setFinalFormData } = useContext(FormDataContext);
@@ -29,40 +32,40 @@ const EmploymentAgreementForm = () => {
     contractCreator: String(connectedWallet.accounts[0].address),
     status: Status.inActive,
     contractor: {
-      name: "",
+      name: "jathin",
       contact: {
-        address: "",
-        phone: "",
-        email: "",
+        address: "hyderabad",
+        phone: "9897773662",
+        email: "jathin@cartesi.io",
       },
       wallet: String(connectedWallet.accounts[0].address),
     },
     contractee: {
-      name: "",
+      name: "jj",
       contact: {
-        address: "",
-        phone: "",
-        email: "",
+        address: "secunderabad",
+        phone: "7995981488",
+        email: "jj@cartesi.io",
       },
-      wallet: "",
+      wallet: String("0x70997970C51812dc3A010C7d01b50e0d17dc79C8"),
     },
     position: {
-      title: "",
-      department: "",
+      title: "Developer Advocate",
+      department: "Developer Advocacy",
       startDate: "",
       endDate: "",
       fulltime: false,
     },
     compensation: {
       salary: {
-        amount: 0,
+        amount: 35000,
         currency: currency.USD,
         frequency: frequency.monthly,
       },
       bonuses: {
         eligibility: false,
         details: "",
-        amount: 0,
+        amount: 5000,
       },
       benefits: {
         healthInsurance: false,
@@ -73,19 +76,17 @@ const EmploymentAgreementForm = () => {
         },
       },
     },
-    responsibilities: [],
+    responsibilities: ["write & maintain high quality code", "create apps"],
     termination: {
-      noticePeriodDays: 0,
+      noticePeriodDays: 15,
       reason: terminationReasons.other,
       Signatures: {
         contractor: {
-          name: "",
           timestamp: Date.now(),
           physical_signature: "",
           digital_signature: "",
         },
         contractee: {
-          name: "",
           timestamp: Date.now(),
           physical_signature: "",
           digital_signature: "",
@@ -94,13 +95,11 @@ const EmploymentAgreementForm = () => {
     },
     signatures: {
       contractorSignature: {
-        name: "",
         timestamp: Date.now(),
         physical_signature: "",
         digital_signature: "",
       },
       contracteeSignature: {
-        name: "",
         timestamp: Date.now(),
         physical_signature: "",
         digital_signature: "",
@@ -147,8 +146,6 @@ const EmploymentAgreementForm = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log(JSON.stringify(formData));
-    formData.signatures.contractorSignature.name = formData.contractor.name;
     if (!sigpadData) {
       alert(`signature is required to submit to the Dapp`);
       return;
@@ -166,7 +163,17 @@ const EmploymentAgreementForm = () => {
       sigpadData
     );
     formData.signatures.contractorSignature.digital_signature = dig_sig;
+
     setFinalFormData(formData);
+    console.log(JSON.stringify(formData));
+    const input = encodeFunctionData({
+      abi: DappAbi,
+      functionName: "createAgreement",
+      args: [JSON.stringify(formData)],
+    });
+    console.log("input is:", input);
+    const result = await advanceInput(signer, props.dapp, input);
+    alert(result);
     setIsModalOpen(false);
   };
 
@@ -327,6 +334,24 @@ const EmploymentAgreementForm = () => {
             placeholder="Enter Contractor Address"
           />
         </div>
+        <div className="mb-4">
+          <label
+            className="block text-gray-700 text-sm font-bold mb-2"
+            htmlFor="contractorWallet"
+          >
+            Wallet
+          </label>
+          <input
+            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            id="contractorAddress"
+            type="text"
+            name="contractee.wallet"
+            value={formData.contractor.wallet}
+            onChange={handleChange}
+            placeholder="Enter Contractor wallet address"
+            disabled
+          />
+        </div>
 
         <h3 className="text-xl text-slate-700 font-bold mb-2">
           Contractee Information
@@ -398,6 +423,23 @@ const EmploymentAgreementForm = () => {
             value={formData.contractee.contact.address}
             onChange={handleChange}
             placeholder="Enter Contractee Address"
+          />
+        </div>
+        <div className="mb-4">
+          <label
+            className="block text-gray-700 text-sm font-bold mb-2"
+            htmlFor="contractee Wallet"
+          >
+            Wallet
+          </label>
+          <input
+            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            id="contracteeWallet"
+            type="text"
+            name="contractee.wallet"
+            value={formData.contractee.wallet}
+            onChange={handleChange}
+            placeholder="Enter Contractor wallet address"
           />
         </div>
 
