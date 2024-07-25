@@ -225,7 +225,8 @@ const EmploymentAgreementCard: React.FC<EmploymentAgreementCardProps> = ({
                 <img
                   className={"sigImage"}
                   src={
-                    agreement.signatures.contractorSignature.physical_signature
+                    agreement.termination.Signatures.contractor
+                      .physical_signature
                   }
                   alt="user generated signature"
                 />
@@ -248,7 +249,8 @@ const EmploymentAgreementCard: React.FC<EmploymentAgreementCardProps> = ({
                 <img
                   className={"sigImage"}
                   src={
-                    agreement.signatures.contractorSignature.physical_signature
+                    agreement.termination.Signatures.contractee
+                      .physical_signature
                   }
                   alt="user generated signature"
                 />

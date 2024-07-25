@@ -16,6 +16,7 @@ import {
   Signature,
   Status,
   termination,
+  terminationReasons,
 } from "./types";
 // create application
 const app = createApp({
@@ -108,8 +109,8 @@ const abi = parseAbi([
   "function addToWhiteList(address user)",
   "function createAgreement(string agreement)",
   "function acceptAgreement(string id,string signature)",
-  "function endAgreement(string id,string signature,uint32 reason)",
-  "function terminateAgreement(string id,string signature)",
+  "function endAgreement(string id,string signature)",
+  "function terminateAgreement(string id,string signature,uint32 reason)",
 ]);
 
 // handle input encoded as ABI function call
@@ -206,31 +207,38 @@ app.addAdvanceHandler(async (data) => {
           data.metadata.timestamp;
         contract.status = Status.inProcess;
         AllContracts.set(contract.agreementId, contract);
-        /*     contractStatus.set(contract.agreementId, {
-          contractType: contract.contractType,
-          status: Status.inProcess,
-        });*/
-        let list = contractsList.get(getAddress(String(sender)).toString());
+
+        let list = contractsList.get(
+          contract.contractCreator.toString().toLowerCase()
+        );
         if (!list || list?.size == 0) {
           list = new Set();
         }
         let contractdetails: ContractStatus = {
           id: contract.agreementId,
-          status: contract.status,
           contractType: contract.contractType,
+          status: Status.initialized,
         };
 
         list.add(contractdetails);
-        contractsList.set(getAddress(String(sender)).toString(), list);
+        contractsList.set(
+          contract.contractCreator.toString().toLowerCase(),
+          list
+        );
         console.log(list, contractsList, sender, contract.contractee.wallet);
 
-        let list1 = contractsList.get(contract.contractee.wallet);
+        let list1 = contractsList.get(
+          contract.contractee.wallet.toString().toLowerCase()
+        );
         if (!list1 || list1?.size == 0) {
           list1 = new Set();
         }
 
         list1.add(contractdetails);
-        contractsList.set(contract.contractee.wallet, list1);
+        contractsList.set(
+          contract.contractee.wallet.toString().toLowerCase(),
+          list1
+        );
         console.log(list1, contractsList);
 
         app.createNotice({
@@ -295,38 +303,6 @@ app.addAdvanceHandler(async (data) => {
         signing_contract.status = Status.active;
         AllContracts.set(signing_contract.agreementId, signing_contract);
 
-        //list logic
-        let contractdetails: ContractStatus = {
-          id: signing_contract.agreementId,
-          status: signing_contract.status,
-          contractType: signing_contract.contractType,
-        };
-        let list = contractsList.get(getAddress(String(sender)).toString());
-        if (!list || list?.size == 0) {
-          list = new Set();
-        }
-
-        list.add(contractdetails);
-        contractdetails.status = Status.inProcess;
-        list.delete(contractdetails);
-        contractsList.set(getAddress(String(sender)).toString(), list);
-        console.log(
-          list,
-          contractsList,
-          sender,
-          signing_contract.contractee.wallet
-        );
-
-        let list1 = contractsList.get(signing_contract.contractCreator);
-        if (!list1 || list1?.size == 0) {
-          list1 = new Set();
-        }
-        list1.delete(contractdetails);
-        contractdetails.status = Status.active;
-        list1.add(contractdetails);
-        contractsList.set(signing_contract.contractCreator, list1);
-        console.log(list1, contractsList);
-
         app.createNotice({
           payload: stringToHex(
             `contract with id ${signing_contract.agreementId}:${JSON.stringify(
@@ -346,7 +322,7 @@ app.addAdvanceHandler(async (data) => {
           });
           return "reject";
         }
-        const [id, _signature, cause] = args;
+        const [id, _signature] = args;
         const signature: Signature = JSON.parse(_signature);
         let contractor_end_agreement = AllContracts.get(id);
         const cstatus = contractor_end_agreement?.status; //contractStatus.get(id);
@@ -382,43 +358,11 @@ app.addAdvanceHandler(async (data) => {
 
         signature.timestamp = data.metadata.timestamp;
         contractor_end_agreement.termination.Signatures.contractee = signature;
-        contractor_end_agreement.termination.reason = cause;
         contractor_end_agreement.status = Status.inActive;
         AllContracts.set(
           contractor_end_agreement.agreementId,
           contractor_end_agreement
         );
-
-        let contractdetails: ContractStatus = {
-          id: contractor_end_agreement.agreementId,
-          status: contractor_end_agreement.status,
-          contractType: contractor_end_agreement.contractType,
-        };
-        let list = contractsList.get(getAddress(String(sender)).toString());
-        if (!list || list?.size == 0) {
-          list = new Set();
-        }
-
-        list.add(contractdetails);
-        contractdetails.status = Status.active;
-        list.delete(contractdetails);
-        contractsList.set(getAddress(String(sender)).toString(), list);
-        console.log(
-          list,
-          contractsList,
-          sender,
-          contractor_end_agreement.contractee.wallet
-        );
-
-        let list1 = contractsList.get(contractor_end_agreement.contractCreator);
-        if (!list1 || list1?.size == 0) {
-          list1 = new Set();
-        }
-        list1.delete(contractdetails);
-        contractdetails.status = Status.inActive;
-        list1.add(contractdetails);
-        contractsList.set(contractor_end_agreement.contractCreator, list1);
-        console.log(list1, contractsList);
 
         app.createNotice({
           payload: stringToHex(
@@ -436,7 +380,7 @@ app.addAdvanceHandler(async (data) => {
           });
           return "reject";
         }
-        const [id, _signature] = args;
+        const [id, _signature, reason] = args;
         const signature: Signature = JSON.parse(_signature);
         let terminate_agreement = AllContracts.get(id);
         const cstatus = terminate_agreement?.status;
@@ -467,38 +411,8 @@ app.addAdvanceHandler(async (data) => {
         signature.timestamp = data.metadata.timestamp;
         terminate_agreement.termination.Signatures.contractor = signature;
         terminate_agreement.status = Status.terminated;
+        terminate_agreement.termination.reason = reason;
         AllContracts.set(terminate_agreement.agreementId, terminate_agreement);
-
-        let contractdetails: ContractStatus = {
-          id: terminate_agreement.agreementId,
-          status: terminate_agreement.status,
-          contractType: terminate_agreement.contractType,
-        };
-        let list = contractsList.get(getAddress(String(sender)).toString());
-        if (!list || list?.size == 0) {
-          list = new Set();
-        }
-
-        list.add(contractdetails);
-        contractdetails.status = Status.inActive;
-        list.delete(contractdetails);
-        contractsList.set(getAddress(String(sender)).toString(), list);
-        console.log(
-          list,
-          contractsList,
-          sender,
-          terminate_agreement.contractee.wallet
-        );
-
-        let list1 = contractsList.get(terminate_agreement.contractee.wallet);
-        if (!list1 || list1?.size == 0) {
-          list1 = new Set();
-        }
-        list1.delete(contractdetails);
-        contractdetails.status = Status.terminated;
-        list1.add(contractdetails);
-        contractsList.set(terminate_agreement.contractee.wallet, list1);
-        console.log(list1, contractsList);
 
         app.createNotice({
           payload: stringToHex(

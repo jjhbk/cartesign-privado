@@ -15,8 +15,8 @@ export enum Status {
   active = 1,
   inProcess,
   inActive,
-
   terminated,
+  initialized,
 }
 
 export enum contractType {

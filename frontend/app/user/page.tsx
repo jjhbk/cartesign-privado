@@ -80,8 +80,8 @@ export const DappAbi = parseAbi([
   "function addToWhiteList(address user)",
   "function createAgreement(string agreement)",
   "function acceptAgreement(string id,string signature)",
-  "function endAgreement(string id,string signature,uint32 reason)",
-  "function terminateAgreement(string id,string signature)",
+  "function endAgreement(string id,string signature)",
+  "function terminateAgreement(string id,string signature,uint32 reason)",
 ]);
 export default function Home() {
   const [{ wallet, connecting }, connect, disconnect] = useConnectWallet();

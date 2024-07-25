@@ -29,7 +29,9 @@ const EmploymentAgreementForm = (props: any) => {
   const [formData, setFormData] = useState<employmentAgreement>({
     agreementId: uuidv4(),
     contractType: contractType.employment,
-    contractCreator: String(connectedWallet.accounts[0].address),
+    contractCreator: connectedWallet.accounts[0].address
+      .toString()
+      .toLowerCase(),
     status: Status.inActive,
     contractor: {
       name: "jathin",
@@ -38,7 +40,7 @@ const EmploymentAgreementForm = (props: any) => {
         phone: "9897773662",
         email: "jathin@cartesi.io",
       },
-      wallet: String(connectedWallet.accounts[0].address),
+      wallet: connectedWallet.accounts[0].address.toString().toLowerCase(),
     },
     contractee: {
       name: "jj",

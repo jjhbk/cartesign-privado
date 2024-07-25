@@ -50,7 +50,7 @@ export const ModalContext = createContext<ModalContextType>({
 export default function Dashboard(props: any) {
   const [connectedWallet] = useWallets();
   const [{ connectedChain }] = useSetChain();
-  const actionMap = ["", "End", "Sign", "Terminate", "View"];
+  const actionMap = ["", "End", "Sign", "Terminate", "View", "initialize"];
   const [sigpadData, setSigpadData] = useState<string>("");
   const [finalFormData, setFinalFormData] = useState<any>({});
   const provider = new ethers.providers.Web3Provider(connectedWallet.provider);
@@ -58,10 +58,19 @@ export default function Dashboard(props: any) {
     const _signer = await provider.getSigner();
     const address = await _signer.getAddress();
     console.log(_signer, address, id);
-    const response = await InspectCall(`contracts/${address.toString()}`, id);
-    console.log(response);
+    const response = await InspectCall(
+      `contracts/${address.toString().toLowerCase()}`,
+      id
+    );
     const all_contracts: ContractStatus[] = JSON.parse(response);
-    console.log("all contracts", all_contracts);
+    if (all_contracts.length > 0) {
+      for (let c_status of all_contracts) {
+        const _response = await InspectCall(`contract/${c_status.id}`, id);
+        c_status.status = JSON.parse(_response).result.status;
+      }
+
+      console.log("all contracts", JSON.stringify(all_contracts));
+    }
     setContracts(all_contracts);
     console.log("response is ", response);
     return response;
@@ -80,7 +89,7 @@ export default function Dashboard(props: any) {
     useState<contractType | null>(null);
   useEffect(() => {
     if (connectedChain) fetchContracts(connectedChain?.id);
-  }, [connectedChain, connectedWallet, isModalOpen]);
+  }, [connectedChain, connectedWallet, isModalOpen, isSignModalOpen]);
   const handleViewAgreement = async (contractstatus: ContractStatus) => {
     if (!connectedChain) {
       alert(`no chain connected`);
@@ -102,7 +111,7 @@ export default function Dashboard(props: any) {
     console.log(JSON.stringify(sig));
     let input = "";
 
-    switch (actionMap[3]) {
+    switch (actionMap[contract.status]) {
       case "Sign":
         console.log("signing the document");
         input = encodeFunctionData({
@@ -118,7 +127,7 @@ export default function Dashboard(props: any) {
         input = encodeFunctionData({
           abi: DappAbi,
           functionName: "endAgreement",
-          args: [contract.id, JSON.stringify(sig), 2],
+          args: [contract.id, JSON.stringify(sig)],
         });
         console.log("input is:", input);
 
@@ -128,7 +137,7 @@ export default function Dashboard(props: any) {
         input = encodeFunctionData({
           abi: DappAbi,
           functionName: "terminateAgreement",
-          args: [contract.id, JSON.stringify(sig)],
+          args: [contract.id, JSON.stringify(sig), 2],
         });
         break;
       default:
@@ -139,6 +148,7 @@ export default function Dashboard(props: any) {
     const result = await advanceInput(signer, props.dapp, input);
     alert(result);
     setIsSignModalOpen(false);
+    setSigpadData("");
   };
   return (
     <div className="overflow-y-auto">
@@ -178,6 +188,7 @@ export default function Dashboard(props: any) {
                           onClick={() => {
                             setcurrentContractStatus(_contractStatus);
                             setIsSignModalOpen(true);
+                            setSigpadData("");
                           }}
                           className="bg-sky-500 px-5 hover:bg-sky-700 text-white font-bold py-1 px-2 rounded"
                         >
@@ -353,6 +364,7 @@ export default function Dashboard(props: any) {
                       <XCircleIcon
                         onClick={() => {
                           setIsSignModalOpen(false);
+                          setSigpadData("");
                         }}
                         className="h-8 w-8 hover:scale-150 stroke-slate-500"
                       />
