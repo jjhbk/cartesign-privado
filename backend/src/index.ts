@@ -162,14 +162,14 @@ app.addAdvanceHandler(async (data) => {
         return "reject";
       }
       case "createAgreement": {
-        /* if (!WhiteList.get(String(sender))) {
+        if (!WhiteList.get(getAddress(String(sender)).toString())) {
           app.createReport({
             payload: stringToHex(
               `user: ${sender} is not whitelisted please verify your identity first using privado ID`
             ),
           });
           return "reject";
-        }*/
+        }
         const [agreement] = args;
 
         let contract: employmentAgreement = JSON.parse(agreement);
@@ -210,7 +210,7 @@ app.addAdvanceHandler(async (data) => {
           contractType: contract.contractType,
           status: Status.inProcess,
         });*/
-        let list = contractsList.get(getAddress(sender).toString());
+        let list = contractsList.get(getAddress(String(sender)).toString());
         if (!list || list?.size == 0) {
           list = new Set();
         }
@@ -221,7 +221,7 @@ app.addAdvanceHandler(async (data) => {
         };
 
         list.add(contractdetails);
-        contractsList.set(getAddress(sender).toString(), list);
+        contractsList.set(getAddress(String(sender)).toString(), list);
         console.log(list, contractsList, sender, contract.contractee.wallet);
 
         let list1 = contractsList.get(contract.contractee.wallet);
@@ -243,7 +243,7 @@ app.addAdvanceHandler(async (data) => {
         return "accept";
       }
       case "acceptAgreement": {
-        if (!WhiteList.get(String(sender))) {
+        if (!WhiteList.get(getAddress(String(sender)).toString())) {
           app.createReport({
             payload: stringToHex(
               `user: ${sender} is not whitelisted please verify your identity first using privado ID`
@@ -294,20 +294,38 @@ app.addAdvanceHandler(async (data) => {
         signing_contract.signatures.contracteeSignature = signature;
         signing_contract.status = Status.active;
         AllContracts.set(signing_contract.agreementId, signing_contract);
-        //   cstatus.status = Status.active;
-        //     contractStatus.set(signing_contract.agreementId, cstatus);
-        let list = contractsList.get(sender);
-        if (!list || list?.size == 0) {
-          list = new Set();
-        }
+
+        //list logic
         let contractdetails: ContractStatus = {
           id: signing_contract.agreementId,
           status: signing_contract.status,
           contractType: signing_contract.contractType,
         };
-        list.add(contractdetails);
+        let list = contractsList.get(getAddress(String(sender)).toString());
+        if (!list || list?.size == 0) {
+          list = new Set();
+        }
 
-        contractsList.set(sender, list);
+        list.add(contractdetails);
+        contractdetails.status = Status.inProcess;
+        list.delete(contractdetails);
+        contractsList.set(getAddress(String(sender)).toString(), list);
+        console.log(
+          list,
+          contractsList,
+          sender,
+          signing_contract.contractee.wallet
+        );
+
+        let list1 = contractsList.get(signing_contract.contractCreator);
+        if (!list1 || list1?.size == 0) {
+          list1 = new Set();
+        }
+        list1.delete(contractdetails);
+        contractdetails.status = Status.active;
+        list1.add(contractdetails);
+        contractsList.set(signing_contract.contractCreator, list1);
+        console.log(list1, contractsList);
 
         app.createNotice({
           payload: stringToHex(
@@ -320,7 +338,7 @@ app.addAdvanceHandler(async (data) => {
       }
 
       case "endAgreement": {
-        if (!WhiteList.get(String(sender))) {
+        if (!WhiteList.get(getAddress(String(sender)).toString())) {
           app.createReport({
             payload: stringToHex(
               `user: ${sender} is not whitelisted please verify your identity first using privado ID`
@@ -348,7 +366,7 @@ app.addAdvanceHandler(async (data) => {
 
         const valid = await verifyMessage({
           address: getAddress(
-            String(contractor_end_agreement.contractor.wallet)
+            String(contractor_end_agreement.contractee.wallet)
           ),
           message: signature.physical_signature,
           signature: <`0x${string}`>signature.digital_signature,
@@ -363,15 +381,44 @@ app.addAdvanceHandler(async (data) => {
         }
 
         signature.timestamp = data.metadata.timestamp;
-        contractor_end_agreement.termination.Signatures.contractor = signature;
+        contractor_end_agreement.termination.Signatures.contractee = signature;
         contractor_end_agreement.termination.reason = cause;
         contractor_end_agreement.status = Status.inActive;
         AllContracts.set(
           contractor_end_agreement.agreementId,
           contractor_end_agreement
         );
-        // cstatus.status = Status.inActive;
-        //contractStatus.set(contractor_end_agreement.agreementId, cstatus);
+
+        let contractdetails: ContractStatus = {
+          id: contractor_end_agreement.agreementId,
+          status: contractor_end_agreement.status,
+          contractType: contractor_end_agreement.contractType,
+        };
+        let list = contractsList.get(getAddress(String(sender)).toString());
+        if (!list || list?.size == 0) {
+          list = new Set();
+        }
+
+        list.add(contractdetails);
+        contractdetails.status = Status.active;
+        list.delete(contractdetails);
+        contractsList.set(getAddress(String(sender)).toString(), list);
+        console.log(
+          list,
+          contractsList,
+          sender,
+          contractor_end_agreement.contractee.wallet
+        );
+
+        let list1 = contractsList.get(contractor_end_agreement.contractCreator);
+        if (!list1 || list1?.size == 0) {
+          list1 = new Set();
+        }
+        list1.delete(contractdetails);
+        contractdetails.status = Status.inActive;
+        list1.add(contractdetails);
+        contractsList.set(contractor_end_agreement.contractCreator, list1);
+        console.log(list1, contractsList);
 
         app.createNotice({
           payload: stringToHex(
@@ -381,7 +428,7 @@ app.addAdvanceHandler(async (data) => {
         return "accept";
       }
       case "terminateAgreement":
-        if (!WhiteList.get(String(sender))) {
+        if (!WhiteList.get(getAddress(String(sender)).toString())) {
           app.createReport({
             payload: stringToHex(
               `user: ${sender} is not whitelisted please verify your identity first using privado ID`
@@ -404,7 +451,7 @@ app.addAdvanceHandler(async (data) => {
         }
 
         const valid = await verifyMessage({
-          address: getAddress(String(terminate_agreement.contractee.wallet)),
+          address: getAddress(String(terminate_agreement.contractor.wallet)),
           message: signature.physical_signature,
           signature: <`0x${string}`>signature.digital_signature,
         });
@@ -418,13 +465,40 @@ app.addAdvanceHandler(async (data) => {
         }
 
         signature.timestamp = data.metadata.timestamp;
-        terminate_agreement.termination.Signatures.contractee = signature;
+        terminate_agreement.termination.Signatures.contractor = signature;
         terminate_agreement.status = Status.terminated;
         AllContracts.set(terminate_agreement.agreementId, terminate_agreement);
-        //AllContracts.delete(terminate_agreement.agreementId);
 
-        // cstatus.status = Status.terminated;
-        // contractStatus.set(terminate_agreement.agreementId, cstatus);
+        let contractdetails: ContractStatus = {
+          id: terminate_agreement.agreementId,
+          status: terminate_agreement.status,
+          contractType: terminate_agreement.contractType,
+        };
+        let list = contractsList.get(getAddress(String(sender)).toString());
+        if (!list || list?.size == 0) {
+          list = new Set();
+        }
+
+        list.add(contractdetails);
+        contractdetails.status = Status.inActive;
+        list.delete(contractdetails);
+        contractsList.set(getAddress(String(sender)).toString(), list);
+        console.log(
+          list,
+          contractsList,
+          sender,
+          terminate_agreement.contractee.wallet
+        );
+
+        let list1 = contractsList.get(terminate_agreement.contractee.wallet);
+        if (!list1 || list1?.size == 0) {
+          list1 = new Set();
+        }
+        list1.delete(contractdetails);
+        contractdetails.status = Status.terminated;
+        list1.add(contractdetails);
+        contractsList.set(terminate_agreement.contractee.wallet, list1);
+        console.log(list1, contractsList);
 
         app.createNotice({
           payload: stringToHex(

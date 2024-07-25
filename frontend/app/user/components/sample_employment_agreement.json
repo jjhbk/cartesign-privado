@@ -35,13 +35,11 @@
     "reason": 8,
     "Signatures": {
       "contractor": {
-        "name": "",
         "timestamp": 1721827063541,
         "physical_signature": "",
         "digital_signature": ""
       },
       "contractee": {
-        "name": "",
         "timestamp": 1721827063541,
         "physical_signature": "",
         "digital_signature": ""
@@ -50,13 +48,11 @@
   },
   "signatures": {
     "contractorSignature": {
-      "name": "",
       "timestamp": 1721827063541,
       "physical_signature": "",
       "digital_signature": ""
     },
     "contracteeSignature": {
-      "name": "",
       "timestamp": 1721827063541,
       "physical_signature": "",
       "digital_signature": ""

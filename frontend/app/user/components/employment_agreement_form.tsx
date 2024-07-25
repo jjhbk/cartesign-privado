@@ -28,7 +28,7 @@ const EmploymentAgreementForm = (props: any) => {
   const { isModalOpen, setIsModalOpen } = useContext(ModalContext);
   const [formData, setFormData] = useState<employmentAgreement>({
     agreementId: uuidv4(),
-    contractType: contractType.rental,
+    contractType: contractType.employment,
     contractCreator: String(connectedWallet.accounts[0].address),
     status: Status.inActive,
     contractor: {

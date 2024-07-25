@@ -7,6 +7,7 @@ import {
   contractType,
   employmentAgreement,
   rentalAgreement,
+  Signature as Sig,
   Status,
 } from "@/app/components/types";
 import { PlusCircleIcon, XCircleIcon } from "@heroicons/react/24/solid";
@@ -16,8 +17,10 @@ import RentalAgreementCard from "./rental_agreement_card";
 import sample_rental_agreement from "./sample_rent_alagreement.json";
 import EmploymentAgreementCard from "./employment_agreement_card";
 import { ethers } from "ethers";
-import { InspectCall } from "../page";
+import { DappAbi, InspectCall } from "../page";
 import { ContractType } from "hardhat/internal/hardhat-network/stack-traces/model";
+import { encodeFunctionData } from "viem";
+import { advanceInput } from "cartesi-client";
 export type SigContextType = {
   sigpadData: string;
   setSigpadData: (d: string) => void;
@@ -46,9 +49,8 @@ export const ModalContext = createContext<ModalContextType>({
 
 export default function Dashboard(props: any) {
   const [connectedWallet] = useWallets();
-
   const [{ connectedChain }] = useSetChain();
-  const actionMap = ["", "Sign", "End", "Terminate", "View"];
+  const actionMap = ["", "End", "Sign", "Terminate", "View"];
   const [sigpadData, setSigpadData] = useState<string>("");
   const [finalFormData, setFinalFormData] = useState<any>({});
   const provider = new ethers.providers.Web3Provider(connectedWallet.provider);
@@ -56,20 +58,14 @@ export default function Dashboard(props: any) {
     const _signer = await provider.getSigner();
     const address = await _signer.getAddress();
     console.log(_signer, address, id);
-    const response = await InspectCall(`allcontracts`, id);
+    const response = await InspectCall(`contracts/${address.toString()}`, id);
     console.log(response);
-    const all_contracts = parseMap(response);
+    const all_contracts: ContractStatus[] = JSON.parse(response);
     console.log("all contracts", all_contracts);
-    setContracts([]);
+    setContracts(all_contracts);
     console.log("response is ", response);
     return response;
   };
-  function parseMap(jsonStr: string): Map<string, Set<string>> {
-    // Parse JSON string to an array
-    const array: [string, string[]][] = JSON.parse(jsonStr);
-    // Convert array to a Map with Set values
-    return new Map(array.map(([key, value]) => [key, new Set(value)]));
-  }
 
   const [contracts, setContracts] = useState<ContractStatus[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -84,7 +80,7 @@ export default function Dashboard(props: any) {
     useState<contractType | null>(null);
   useEffect(() => {
     if (connectedChain) fetchContracts(connectedChain?.id);
-  }, [connectedWallet, connectedChain]);
+  }, [connectedChain, connectedWallet, isModalOpen]);
   const handleViewAgreement = async (contractstatus: ContractStatus) => {
     if (!connectedChain) {
       alert(`no chain connected`);
@@ -94,30 +90,55 @@ export default function Dashboard(props: any) {
     setSelectedContractType(contractstatus.contractType);
     setcurrentContractStatus(contractstatus);
   };
-  const handleSignAgreement = (contract: ContractStatus) => {
-    console.log("signing the document");
-  };
-  const handleEndAgreement = (contract: ContractStatus) => {
-    console.log("ending agreement");
-  };
-  const handleTerminateAgreement = (contract: ContractStatus) => {
-    console.log("terminating the agreement");
-  };
-  const handleAgreementAction = (contract: ContractStatus) => {
-    switch (actionMap[contract.status]) {
+
+  const handleAgreementAction = async (contract: ContractStatus) => {
+    const signer = await provider.getSigner();
+    const dig_sig = await signer.signMessage(sigpadData);
+    let sig: Sig = {
+      physical_signature: sigpadData,
+      digital_signature: dig_sig,
+      timestamp: Date.now(),
+    };
+    console.log(JSON.stringify(sig));
+    let input = "";
+
+    switch (actionMap[3]) {
       case "Sign":
-        handleSignAgreement(contract);
+        console.log("signing the document");
+        input = encodeFunctionData({
+          abi: DappAbi,
+          functionName: "acceptAgreement",
+          args: [contract.id, JSON.stringify(sig)],
+        });
+        console.log("input is:", input);
+
         break;
       case "End":
-        handleEndAgreement(contract);
+        console.log("ending agreement");
+        input = encodeFunctionData({
+          abi: DappAbi,
+          functionName: "endAgreement",
+          args: [contract.id, JSON.stringify(sig), 2],
+        });
+        console.log("input is:", input);
+
         break;
       case "Terminate":
-        handleTerminateAgreement(contract);
+        console.log("terminating the agreement");
+        input = encodeFunctionData({
+          abi: DappAbi,
+          functionName: "terminateAgreement",
+          args: [contract.id, JSON.stringify(sig)],
+        });
         break;
       default:
+        console.log("viewing agreement");
         handleViewAgreement(contract);
         break;
     }
+    const result = await advanceInput(signer, props.dapp, input);
+    alert(result);
+    setIsSignModalOpen(false);
   };
   return (
     <div className="overflow-y-auto">
@@ -195,6 +216,7 @@ export default function Dashboard(props: any) {
                       <XCircleIcon
                         onClick={() => {
                           setIsModalOpen(false);
+
                           setSelectedContractType(null);
                         }}
                         className="h-8 w-8 hover:scale-150 stroke-slate-500"

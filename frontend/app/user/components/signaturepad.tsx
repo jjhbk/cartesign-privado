@@ -6,6 +6,8 @@ export default function Signature() {
   const [dataURL, setDataURL] = useState("");
   const clear = () => {
     padRef.current?.clear();
+    setSigpadData("");
+    setDataURL("");
   };
   const trim = async () => {
     var url = "";

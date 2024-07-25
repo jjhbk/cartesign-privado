@@ -194,20 +194,14 @@ const RentalAgreementCard: React.FC<RentalAgreementCardProps> = ({
               <strong>Reason:</strong>{" "}
               {terminationReasons[agreement.termination.reason]}
             </p>
-            <p>
-              <strong>Contractor Signature:</strong>{" "}
-              {agreement.termination.Signatures.contractor.name}
-            </p>
+
             <p>
               <strong>Contractor Signature Date:</strong>{" "}
               {formatDate(
                 agreement.termination.Signatures.contractor.timestamp
               )}
             </p>
-            <p>
-              <strong>Contractee Signature:</strong>{" "}
-              {agreement.termination.Signatures.contractee.name}
-            </p>
+
             <p>
               <strong>Contractee Signature Date:</strong>{" "}
               {formatDate(
@@ -218,18 +212,12 @@ const RentalAgreementCard: React.FC<RentalAgreementCardProps> = ({
 
           <div>
             <h3 className="font-bold text-gray-700">Signatures</h3>
-            <p>
-              <strong>Contractor Signature:</strong>{" "}
-              {agreement.signatures.contractorSignature.name}
-            </p>
+
             <p>
               <strong>Contractor Signature Date:</strong>{" "}
               {formatDate(agreement.signatures.contractorSignature.timestamp)}
             </p>
-            <p>
-              <strong>Contractee Signature:</strong>{" "}
-              {agreement.signatures.contracteeSignature.name}
-            </p>
+
             <p>
               <strong>Contractee Signature Date:</strong>{" "}
               {formatDate(agreement.signatures.contracteeSignature.timestamp)}

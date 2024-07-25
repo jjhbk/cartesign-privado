@@ -23,15 +23,17 @@ const EmploymentAgreementCard: React.FC<EmploymentAgreementCardProps> = ({
   const fetchSingleContract = async (contract_id: string, chainid: string) => {
     console.log("fetching contract...");
     const response = await InspectCall(`contract/${contract_id}`, chainid);
-    setAgreement(response);
+    const contract = JSON.parse(response);
+    setAgreement(contract.result);
     console.log("response is ", response);
+
     return response;
   };
   useEffect(() => {
     if (agreementId && chainId != null) {
       fetchSingleContract(agreementId, chainId);
     }
-  }, [agreement]);
+  }, []);
   const currencySymbol = (_currency: currency) => {
     switch (_currency) {
       case currency.USD:
@@ -209,7 +211,6 @@ const EmploymentAgreementCard: React.FC<EmploymentAgreementCardProps> = ({
             </p>
             <p>
               <strong>Contractor Signature:</strong>{" "}
-              {agreement.termination.Signatures.contractor.name}
             </p>
             <p>
               <strong>Contractor Signature Date:</strong>{" "}
@@ -218,8 +219,21 @@ const EmploymentAgreementCard: React.FC<EmploymentAgreementCardProps> = ({
               )}
             </p>
             <p>
+              <strong>Contractor physical Signature:</strong>{" "}
+              {agreement.termination.Signatures.contractor
+                .physical_signature ? (
+                <img
+                  className={"sigImage"}
+                  src={
+                    agreement.signatures.contractorSignature.physical_signature
+                  }
+                  alt="user generated signature"
+                />
+              ) : null}{" "}
+            </p>
+
+            <p>
               <strong>Contractee Signature:</strong>{" "}
-              {agreement.termination.Signatures.contractee.name}
             </p>
             <p>
               <strong>Contractee Signature Date:</strong>{" "}
@@ -227,25 +241,68 @@ const EmploymentAgreementCard: React.FC<EmploymentAgreementCardProps> = ({
                 agreement.termination.Signatures.contractee.timestamp
               )}
             </p>
+            <p>
+              <strong>Contractee physical Signature:</strong>{" "}
+              {agreement.termination.Signatures.contractee
+                .physical_signature ? (
+                <img
+                  className={"sigImage"}
+                  src={
+                    agreement.signatures.contractorSignature.physical_signature
+                  }
+                  alt="user generated signature"
+                />
+              ) : null}{" "}
+            </p>
           </div>
 
           <div>
             <h3 className="font-bold text-gray-700">Signatures</h3>
             <p>
               <strong>Contractor Signature:</strong>{" "}
-              {agreement.signatures.contractorSignature.name}
             </p>
             <p>
               <strong>Contractor Signature Date:</strong>{" "}
               {formatDate(agreement.signatures.contractorSignature.timestamp)}
             </p>
             <p>
+              <strong>Contractor physical Signature:</strong>{" "}
+              {agreement.signatures.contractorSignature.physical_signature ? (
+                <img
+                  className={"sigImage"}
+                  src={
+                    agreement.signatures.contractorSignature.physical_signature
+                  }
+                  alt="user generated signature"
+                />
+              ) : null}{" "}
+            </p>
+            <p>
+              <strong>Contractee digital Signature :</strong>{" "}
+              {agreement.signatures.contracteeSignature.digital_signature}
+            </p>
+            <p>
               <strong>Contractee Signature:</strong>{" "}
-              {agreement.signatures.contracteeSignature.name}
             </p>
             <p>
               <strong>Contractee Signature Date:</strong>{" "}
               {formatDate(agreement.signatures.contracteeSignature.timestamp)}
+            </p>
+            <p>
+              <strong>Contractee physical Signature:</strong>{" "}
+              {agreement.signatures.contracteeSignature.physical_signature ? (
+                <img
+                  className={"sigImage"}
+                  src={
+                    agreement.signatures.contracteeSignature.physical_signature
+                  }
+                  alt="user generated signature"
+                />
+              ) : null}{" "}
+            </p>
+            <p>
+              <strong>Contractee digital Signature :</strong>{" "}
+              {agreement.signatures.contracteeSignature.digital_signature}
             </p>
           </div>
         </div>

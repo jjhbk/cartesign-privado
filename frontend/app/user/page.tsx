@@ -17,7 +17,6 @@ import {
 } from "cartesi-client";
 import "../globals.css";
 import Modal from "./components/modal";
-import { Input } from "./components/input";
 import { Report } from "./components/reports";
 import { Notice } from "./components/notices";
 import EmploymentAgreementForm from "./components/employment_agreement_form";
@@ -154,8 +153,6 @@ export default function Home() {
         <div className="p-6">
           <Network />
           <br />
-          <Notice />
-          <Report />
           {!isWhiteListed && connectedWallet && (
             <div>
               <Modal dapp={dappAddress} show={!isWhiteListed} />
