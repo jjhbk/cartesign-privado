@@ -3,3 +3,6 @@
 /node_modules
 src/schema.d.ts
 src/index1.js
+*.toml
+*.env
+*.fly

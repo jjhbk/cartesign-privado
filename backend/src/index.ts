@@ -101,19 +101,7 @@ function mapToJson(map: Map<string, Set<ContractStatus>>): string {
 
 const WhiteList = new Map<string, boolean>();
 WhiteList.set(
-  String("0x4eF27B6eb11b645139596a0b5E27e4B1662b0EC5").toLowerCase(),
-  true
-);
-WhiteList.set(
   String("0x08208F5518c622a0165DBC1432Bc2c361AdFFFB1").toLowerCase(),
-  true
-);
-WhiteList.set(
-  String("0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266").toLowerCase(),
-  true
-);
-WhiteList.set(
-  String("0x70997970C51812dc3A010C7d01b50e0d17dc79C8").toLowerCase(),
   true
 );
 
@@ -218,8 +206,6 @@ app.addAdvanceHandler(async (data) => {
         /**  After checking necessary conditions we must
          * update signature timestamps inside the contract
          * update contract status
-         * update active/intermediate contracts map
-         * update contract status map
          * update the address based list for contractors && contractees
          */
 
