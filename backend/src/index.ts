@@ -20,8 +20,7 @@ import {
 } from "./types";
 // create application
 const app = createApp({
-  url:
-    process.env.ROLLUP_HTTP_SERVER_URL || "http://127.0.0.1:8080/host-runner",
+  url: process.env.ROLLUP_HTTP_SERVER_URL || "http://127.0.0.1:5004/",
 });
 const wallet = createWallet();
 const router = createRouter({ app });
@@ -50,7 +49,7 @@ router.add<{ address: string }>(
   ({ params: { address } }) => {
     console.log(address);
     return JSON.stringify({
-      result: WhiteList.get(String(address)) != undefined,
+      result: WhiteList.get(String(address).toLowerCase()) != undefined,
     });
   }
 );
@@ -101,8 +100,23 @@ function mapToJson(map: Map<string, Set<ContractStatus>>): string {
 }
 
 const WhiteList = new Map<string, boolean>();
-WhiteList.set("0x70997970C51812dc3A010C7d01b50e0d17dc79C8", true);
-WhiteList.set("0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266", true);
+WhiteList.set(
+  String("0x4eF27B6eb11b645139596a0b5E27e4B1662b0EC5").toLowerCase(),
+  true
+);
+WhiteList.set(
+  String("0x08208F5518c622a0165DBC1432Bc2c361AdFFFB1").toLowerCase(),
+  true
+);
+WhiteList.set(
+  String("0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266").toLowerCase(),
+  true
+);
+WhiteList.set(
+  String("0x70997970C51812dc3A010C7d01b50e0d17dc79C8").toLowerCase(),
+  true
+);
+
 // define application ABI
 const abi = parseAbi([
   "function checkWhiteList(address user)",
@@ -144,7 +158,9 @@ app.addAdvanceHandler(async (data) => {
       case "addToWhiteList": {
         if (
           getAddress(sender) ==
-          getAddress("0x0Fb484F2057e224D5f025B4bD5926669a5a32786")
+            getAddress("0x0Fb484F2057e224D5f025B4bD5926669a5a32786") ||
+          getAddress(sender) ==
+            getAddress("0x70c0dE66524a14a55BDb18D00a50e32648dCAa4c")
         ) {
           const [user] = args;
 
@@ -163,7 +179,11 @@ app.addAdvanceHandler(async (data) => {
         return "reject";
       }
       case "createAgreement": {
-        if (!WhiteList.get(getAddress(String(sender)).toString())) {
+        if (
+          !WhiteList.get(
+            getAddress(String(sender)).toString().toLocaleLowerCase()
+          )
+        ) {
           app.createReport({
             payload: stringToHex(
               `user: ${sender} is not whitelisted please verify your identity first using privado ID`
@@ -251,7 +271,9 @@ app.addAdvanceHandler(async (data) => {
         return "accept";
       }
       case "acceptAgreement": {
-        if (!WhiteList.get(getAddress(String(sender)).toString())) {
+        if (
+          !WhiteList.get(getAddress(String(sender)).toString().toLowerCase())
+        ) {
           app.createReport({
             payload: stringToHex(
               `user: ${sender} is not whitelisted please verify your identity first using privado ID`
@@ -314,7 +336,9 @@ app.addAdvanceHandler(async (data) => {
       }
 
       case "endAgreement": {
-        if (!WhiteList.get(getAddress(String(sender)).toString())) {
+        if (
+          !WhiteList.get(getAddress(String(sender)).toString().toLowerCase())
+        ) {
           app.createReport({
             payload: stringToHex(
               `user: ${sender} is not whitelisted please verify your identity first using privado ID`
@@ -372,7 +396,9 @@ app.addAdvanceHandler(async (data) => {
         return "accept";
       }
       case "terminateAgreement":
-        if (!WhiteList.get(getAddress(String(sender)).toString())) {
+        if (
+          !WhiteList.get(getAddress(String(sender)).toString().toLowerCase())
+        ) {
           app.createReport({
             payload: stringToHex(
               `user: ${sender} is not whitelisted please verify your identity first using privado ID`

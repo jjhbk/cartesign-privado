@@ -9,31 +9,45 @@ import {
   User,
 } from "@/app/components/types";
 import Signature from "./signaturepad";
-import { FormDataContext, ModalContext } from "./dashboard";
-const RentalAgreementForm = () => {
+import {
+  FormDataContext,
+  ModalContext,
+  SignaturepadContext,
+} from "./dashboard";
+import { v4 as uuidv4 } from "uuid";
+import { useWallets } from "@web3-onboard/react";
+import { ethers } from "ethers";
+import { DappAbi } from "../page";
+import { encodeFunctionData } from "viem";
+import { advanceInput } from "cartesi-client";
+const RentalAgreementForm = (props: any) => {
   const { finalFormData, setFinalFormData } = useContext(FormDataContext);
   const { isModalOpen, setIsModalOpen } = useContext(ModalContext);
+  const [connectedWallet] = useWallets();
+  const { sigpadData } = useContext(SignaturepadContext);
 
   const [formData, setFormData] = useState<rentalAgreement>({
-    agreementId: "",
+    agreementId: uuidv4(),
     contractType: contractType.rental,
-    contractCreator: "",
-    status: Status.active,
+    contractCreator: connectedWallet.accounts[0].address
+      .toString()
+      .toLowerCase(),
+    status: Status.inActive,
     property: {
-      address: "",
-      property_type: "",
-      bedrooms: 0,
-      bathrooms: 0,
-      total_area_sqft: 0,
+      address: "Hyderabad",
+      property_type: "House",
+      bedrooms: 3,
+      bathrooms: 3,
+      total_area_sqft: 2000,
     },
     contractor: {
-      name: "",
+      name: "Adam",
       contact: {
-        address: "",
-        phone: "",
-        email: "",
+        address: "hyderabad",
+        phone: "1234567890",
+        email: "adam@gmail.com",
       },
-      wallet: "",
+      wallet: connectedWallet.accounts[0].address.toString().toLowerCase(),
     },
     contractee: {
       name: "",
@@ -42,33 +56,35 @@ const RentalAgreementForm = () => {
         phone: "",
         email: "",
       },
-      wallet: "",
+      wallet: String(
+        "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
+      ).toLowerCase(),
     },
     leaseTerms: {
       startDate: "",
       endDate: "",
       rent: {
-        amount: 0,
+        amount: 2000,
         currency: currency.USD,
         dueDate: 1,
       },
       securityDeposit: {
-        amount: 0,
+        amount: 1000,
         currency: currency.USD,
       },
       lateFee: {
-        amount: 0,
+        amount: 100,
         currency: currency.USD,
         gracePeriod: 0,
       },
     },
     utilities: {
-      included: [],
-      tenantResponsibilities: [],
+      included: ["water", "electricity", "trash", "washing"],
+      tenantResponsibilities: ["lights", "fans"],
     },
     maintenance: {
-      landlordResponsibility: [],
-      tenantResponsibility: [],
+      landlordResponsibility: ["water", "electricity"],
+      tenantResponsibility: ["lights", "ac"],
     },
     rules: {
       petsAllowed: false,
@@ -142,10 +158,36 @@ const RentalAgreementForm = () => {
     setFormData((prevState) => updateNestedState(nameParts, prevState, value));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log(JSON.stringify(formData));
+    if (!sigpadData) {
+      alert(`signature is required to submit to the Dapp`);
+      return;
+    }
+    formData.signatures.contractorSignature.physical_signature = sigpadData;
+    const provider = new ethers.providers.Web3Provider(
+      connectedWallet.provider
+    );
+    const signer = await provider.getSigner();
+    const dig_sig = await signer.signMessage(sigpadData);
+    console.log(
+      "digital signature is",
+      dig_sig,
+      "physical signature is:",
+      sigpadData
+    );
+    formData.signatures.contractorSignature.digital_signature = dig_sig;
+
     setFinalFormData(formData);
+    console.log(JSON.stringify(formData));
+    const input = encodeFunctionData({
+      abi: DappAbi,
+      functionName: "createAgreement",
+      args: [JSON.stringify(formData)],
+    });
+    console.log("input is:", input);
+    const result = await advanceInput(signer, props.dapp, input);
+    alert(JSON.stringify(result));
     setIsModalOpen(false);
   };
 
@@ -190,8 +232,8 @@ const RentalAgreementForm = () => {
             value={formData.contractType}
             onChange={handleChange}
             className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            disabled
           >
-            <option value={contractType.employment}>Employment</option>
             <option value={contractType.rental}>Rental</option>
           </select>
         </div>
@@ -227,6 +269,7 @@ const RentalAgreementForm = () => {
             value={formData.status}
             onChange={handleChange}
             className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            disabled
           >
             <option value={Status.active}>Active</option>
             <option value={Status.inProcess}>In Process</option>
@@ -235,7 +278,9 @@ const RentalAgreementForm = () => {
           </select>
         </div>
 
-        <h3 className="text-xl font-bold mb-2">Property Information</h3>
+        <h3 className="text-xl text-slate-700 font-bold mb-2">
+          Property Information
+        </h3>
         <div className="mb-4">
           <label
             className="block text-gray-700 text-sm font-bold mb-2"
@@ -322,7 +367,9 @@ const RentalAgreementForm = () => {
           />
         </div>
 
-        <h3 className="text-xl font-bold mb-2">Contractor Information</h3>
+        <h3 className="text-xl font-bold text-slate-700 mb-2">
+          Contractor Information
+        </h3>
         <div className="mb-4">
           <label
             className="block text-gray-700 text-sm font-bold mb-2"
@@ -354,7 +401,8 @@ const RentalAgreementForm = () => {
             name="contractor.contact.phone"
             value={formData.contractor.contact.phone}
             onChange={handleChange}
-            placeholder="Enter Contractor Phone"
+            pattern="[0-9]{3}-[0-9]{3}-[0-9]{4}"
+            placeholder="123-456-7890"
           />
         </div>
         <div className="mb-4">
@@ -371,7 +419,7 @@ const RentalAgreementForm = () => {
             name="contractor.contact.email"
             value={formData.contractor.contact.email}
             onChange={handleChange}
-            placeholder="Enter Contractor Email"
+            placeholder="123@gmail.com"
           />
         </div>
         <div className="mb-4">
@@ -392,7 +440,9 @@ const RentalAgreementForm = () => {
           />
         </div>
 
-        <h3 className="text-xl font-bold mb-2">Contractee Information</h3>
+        <h3 className="text-xl text-slate-700 font-bold mb-2">
+          Contractee Information
+        </h3>
         <div className="mb-4">
           <label
             className="block text-gray-700 text-sm font-bold mb-2"
@@ -424,7 +474,8 @@ const RentalAgreementForm = () => {
             name="contractee.contact.phone"
             value={formData.contractee.contact.phone}
             onChange={handleChange}
-            placeholder="Enter Contractee Phone"
+            pattern="[0-9]{3}-[0-9]{3}-[0-9]{4}"
+            placeholder="123-456-7890"
           />
         </div>
         <div className="mb-4">
@@ -441,7 +492,7 @@ const RentalAgreementForm = () => {
             name="contractee.contact.email"
             value={formData.contractee.contact.email}
             onChange={handleChange}
-            placeholder="Enter Contractee Email"
+            placeholder="123@gmail.com"
           />
         </div>
         <div className="mb-4">
@@ -462,7 +513,7 @@ const RentalAgreementForm = () => {
           />
         </div>
 
-        <h3 className="text-xl font-bold mb-2">Lease Terms</h3>
+        <h3 className="text-xl text-slate-700 font-bold mb-2">Lease Terms</h3>
         <div className="mb-4">
           <label
             className="block text-gray-700 text-sm font-bold mb-2"
@@ -640,7 +691,7 @@ const RentalAgreementForm = () => {
           />
         </div>
 
-        <h3 className="text-xl font-bold mb-2">Utilities</h3>
+        <h3 className="text-xl font-bold text-slate-700 mb-2">Utilities</h3>
         <div className="mb-4">
           <label
             className="block text-gray-700 text-sm font-bold mb-2"
@@ -752,7 +803,7 @@ const RentalAgreementForm = () => {
           />
         </div>
 
-        <h3 className="text-xl font-bold mb-2">Rules</h3>
+        <h3 className="text-xl text-slate-700 font-bold mb-2">Rules</h3>
         <div className="mb-4">
           <label
             className="block text-gray-700 text-sm font-bold mb-2"
@@ -803,7 +854,9 @@ const RentalAgreementForm = () => {
           />
         </div>
 
-        <h3 className="text-xl font-bold mb-2">Termination Information</h3>
+        <h3 className="text-xl font-bold text-slate-700 mb-2">
+          Termination Information
+        </h3>
         <div className="mb-4">
           <label
             className="block text-gray-700 text-sm font-bold mb-2"
@@ -821,7 +874,7 @@ const RentalAgreementForm = () => {
             placeholder="Enter Notice Period in Days"
           />
         </div>
-        <div className="mb-4">
+        <div className="mb-4 ">
           <label
             className="block text-gray-700 text-sm font-bold mb-2"
             htmlFor="terminationReason"

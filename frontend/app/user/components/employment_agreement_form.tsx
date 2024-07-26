@@ -31,29 +31,33 @@ const EmploymentAgreementForm = (props: any) => {
     contractType: contractType.employment,
     contractCreator: connectedWallet.accounts[0].address
       .toString()
+      .toLowerCase()
+      .toString()
       .toLowerCase(),
     status: Status.inActive,
     contractor: {
-      name: "jathin",
+      name: "adam",
       contact: {
         address: "hyderabad",
-        phone: "9897773662",
-        email: "jathin@cartesi.io",
+        phone: "1234567890",
+        email: "adam@cartesi.io",
       },
       wallet: connectedWallet.accounts[0].address.toString().toLowerCase(),
     },
     contractee: {
-      name: "jj",
+      name: "Paul",
       contact: {
         address: "secunderabad",
-        phone: "7995981488",
-        email: "jj@cartesi.io",
+        phone: "0987654321",
+        email: "Paul@cartesi.io",
       },
-      wallet: String("0x70997970C51812dc3A010C7d01b50e0d17dc79C8"),
+      wallet: String(
+        "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
+      ).toLowerCase(),
     },
     position: {
-      title: "Developer Advocate",
-      department: "Developer Advocacy",
+      title: "Software Developer",
+      department: "Node Unit",
       startDate: "",
       endDate: "",
       fulltime: false,
@@ -168,6 +172,7 @@ const EmploymentAgreementForm = (props: any) => {
 
     setFinalFormData(formData);
     console.log(JSON.stringify(formData));
+
     const input = encodeFunctionData({
       abi: DappAbi,
       functionName: "createAgreement",
@@ -175,7 +180,7 @@ const EmploymentAgreementForm = (props: any) => {
     });
     console.log("input is:", input);
     const result = await advanceInput(signer, props.dapp, input);
-    alert(result);
+    alert(JSON.stringify(result));
     setIsModalOpen(false);
   };
 
@@ -258,6 +263,7 @@ const EmploymentAgreementForm = (props: any) => {
             value={formData.status}
             onChange={handleChange}
             className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            disabled
           >
             <option value={Status.inActive}>Inactive</option>
           </select>

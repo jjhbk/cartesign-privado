@@ -17,8 +17,6 @@ import {
 } from "cartesi-client";
 import "../globals.css";
 import Modal from "./components/modal";
-import { Report } from "./components/reports";
-import { Notice } from "./components/notices";
 import EmploymentAgreementForm from "./components/employment_agreement_form";
 import RentalAgreementForm from "./components/rental_agreement_form";
 import { useRouter } from "next/navigation";

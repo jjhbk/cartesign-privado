@@ -6,7 +6,6 @@ export default function Landing() {
   return (
     <>
       <main>
-        <Navbar transparent />
         <div
           className="relative pt-16 pb-32 flex content-center items-center justify-center"
           style={{

@@ -14,11 +14,9 @@ import { PlusCircleIcon, XCircleIcon } from "@heroicons/react/24/solid";
 import EmploymentAgreementForm from "./employment_agreement_form";
 import RentalAgreementForm from "./rental_agreement_form";
 import RentalAgreementCard from "./rental_agreement_card";
-import sample_rental_agreement from "./sample_rent_alagreement.json";
 import EmploymentAgreementCard from "./employment_agreement_card";
 import { ethers } from "ethers";
 import { DappAbi, InspectCall } from "../page";
-import { ContractType } from "hardhat/internal/hardhat-network/stack-traces/model";
 import { encodeFunctionData } from "viem";
 import { advanceInput } from "cartesi-client";
 export type SigContextType = {
@@ -82,9 +80,7 @@ export default function Dashboard(props: any) {
   const [isSignModalOpen, setIsSignModalOpen] = useState(false);
   const [currentContractStatus, setcurrentContractStatus] =
     useState<ContractStatus>();
-  const [currentContract, setCurrentContract] = useState<
-    employmentAgreement | rentalAgreement
-  >();
+
   const [selectedContractType, setSelectedContractType] =
     useState<contractType | null>(null);
   useEffect(() => {
@@ -187,7 +183,9 @@ export default function Dashboard(props: any) {
                         <button
                           onClick={() => {
                             setcurrentContractStatus(_contractStatus);
-                            setIsSignModalOpen(true);
+                            _contractStatus.status !== Status.terminated
+                              ? setIsSignModalOpen(true)
+                              : setIsViewModalOpen(true);
                             setSigpadData("");
                           }}
                           className="bg-sky-500 px-5 hover:bg-sky-700 text-white font-bold py-1 px-2 rounded"
@@ -264,7 +262,7 @@ export default function Dashboard(props: any) {
                           selectedContractType == contractType.employment ? (
                             <EmploymentAgreementForm dapp={props.dapp} />
                           ) : (
-                            <RentalAgreementForm />
+                            <RentalAgreementForm dapp={props.dapp} />
                           )}
                         </ModalContext.Provider>
                       </SignaturepadContext.Provider>
@@ -323,7 +321,12 @@ export default function Dashboard(props: any) {
                         />
                       ) : (
                         <RentalAgreementCard
-                          agreement={currentContract as rentalAgreement}
+                          chainId={
+                            connectedChain != null
+                              ? connectedChain.id
+                              : "0x7a69"
+                          }
+                          agreementId={currentContractStatus?.id}
                         />
                       )}
                     </div>
@@ -395,13 +398,6 @@ export default function Dashboard(props: any) {
           </div>
         </div>
       )}
-      <button
-        onClick={() =>
-          console.log("the details are", finalFormData, sigpadData)
-        }
-      >
-        Get Details
-      </button>
     </div>
   );
 }
