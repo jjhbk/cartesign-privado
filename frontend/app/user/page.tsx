@@ -3,7 +3,14 @@ import injectedModule from "@web3-onboard/injected-wallets";
 import { init, useWallets } from "@web3-onboard/react";
 import { ethers } from "ethers";
 import { getAddress, hexToString } from "viem";
-import { useState, useRef, FC, useEffect } from "react";
+import {
+  useState,
+  useRef,
+  FC,
+  useEffect,
+  useContext,
+  createContext,
+} from "react";
 import { v4 as uuidv4 } from "uuid";
 import { useConnectWallet, useSetChain } from "@web3-onboard/react";
 import configFile from "./config.json";
@@ -23,6 +30,7 @@ import { HomeIcon } from "@heroicons/react/24/solid";
 import Link from "next/link";
 import { Network } from "./components/network";
 import Dashboard from "./components/dashboard";
+import { Spinner } from "./components/spinner";
 const config: any = configFile;
 const injected = injectedModule();
 
@@ -61,8 +69,13 @@ export const InspectCall = async (
     console.error(`No inspect interface defined for chain ${chainid}`);
     return new Error(`No inspect interface defined for chain ${chainid}`);
   }
-
-  await fetch(`${apiURL}/${path}`)
+  console.log(`${apiURL}/${path}`);
+  await fetch(`${apiURL}/${path}`, {
+    method: "get",
+    headers: new Headers({
+      "ngrok-skip-browser-warning": "9999",
+    }),
+  })
     .then((response) => response.json())
     .then((data) => {
       console.log("inspect result is:", data);
@@ -71,6 +84,15 @@ export const InspectCall = async (
   return payload;
 };
 
+export type spinnerContextType = {
+  spinner: boolean;
+  setSpinner: (d: boolean) => void;
+};
+
+export const spinnerContext = createContext<spinnerContextType>({
+  spinner: false,
+  setSpinner: (d: boolean) => {},
+});
 export const DappAbi = parseAbi([
   "function checkWhiteList(address user)",
   "function addToWhiteList(address user)",
@@ -79,6 +101,7 @@ export const DappAbi = parseAbi([
   "function endAgreement(string id,string signature)",
   "function terminateAgreement(string id,string signature,uint32 reason)",
 ]);
+
 export default function Home() {
   const [{ wallet, connecting }, connect, disconnect] = useConnectWallet();
   const [{ chains, connectedChain, settingChain }, setChain] = useSetChain();
@@ -86,6 +109,7 @@ export default function Home() {
   const [contracts, setContracts] = useState(undefined);
   const [signer, setSigner] = useState<ethers.providers.JsonRpcSigner>();
   const [provider, setProvider] = useState<ethers.providers.Web3Provider>();
+  const [spinner, setSpinner] = useState<boolean>(false);
   const [dappAddress, setDappAddress] = useState<string>(
     "0xccf6a46CF287e1f8e1b2981c1f5B92BA77F3e9Ed"
   );
@@ -103,6 +127,7 @@ export default function Home() {
   };
 
   const checkWhitelist = async (id: string) => {
+    setSpinner(true);
     const provider = new ethers.providers.Web3Provider(
       connectedWallet.provider
     );
@@ -114,6 +139,7 @@ export default function Home() {
     console.log(_signer, address, id);
 
     const payload = await InspectCall(`whiteList/${address.toLowerCase()}`, id);
+    setSpinner(false);
     console.log("payload is", payload);
     if (JSON.parse(payload)?.result) {
       console.log("whitelist status is:", JSON.parse(payload)?.result);
@@ -130,7 +156,7 @@ export default function Home() {
     if (connectedWallet && connectedChain) {
       checkWhitelist(connectedChain.id);
     }
-  }, [connectedWallet, isWhiteListed]);
+  }, [connectedWallet]);
   return (
     <div className="w-screen overflow-y-auto  h-dvh  bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 ">
       <div className="relative  divide-y divide-dashed divide-blue-400 flex flex-col">
@@ -146,19 +172,25 @@ export default function Home() {
             <HomeIcon className="h-20 w-20 active:scale-110 text-blue-300 " />
           </Link>
         </div>
+        <Network />
 
-        <div className="p-6">
-          <Network />
-
-          <br />
+        <br />
+      </div>
+      {spinner && <Spinner />}
+      {!spinner && (
+        <spinnerContext.Provider value={{ spinner, setSpinner }}>
           {!isWhiteListed && connectedWallet && (
             <div>
               <Modal dapp={dappAddress} show={!isWhiteListed} />
             </div>
           )}
-        </div>
-        {isWhiteListed && connectedWallet && <Dashboard dapp={dappAddress} />}
-      </div>
+          <div className="p-6">
+            {isWhiteListed && connectedWallet && (
+              <Dashboard dapp={dappAddress} />
+            )}
+          </div>
+        </spinnerContext.Provider>
+      )}
     </div>
   );
 }

@@ -2,6 +2,7 @@
   "name": "frontend",
   "version": "0.1.0",
   "private": true,
+  "proxy": "https://3c0209203a21-4663034037928092558.ngrok-free.app",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

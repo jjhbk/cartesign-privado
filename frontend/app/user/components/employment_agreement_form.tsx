@@ -180,7 +180,7 @@ const EmploymentAgreementForm = (props: any) => {
     });
     console.log("input is:", input);
     const result = await advanceInput(signer, props.dapp, input);
-    alert(JSON.stringify(result));
+    result ? alert("success") : alert("request failed");
     setIsModalOpen(false);
   };
 
