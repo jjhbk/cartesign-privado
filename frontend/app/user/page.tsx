@@ -19,12 +19,10 @@ import "../globals.css";
 import Modal from "./components/modal";
 import EmploymentAgreementForm from "./components/employment_agreement_form";
 import RentalAgreementForm from "./components/rental_agreement_form";
-import { useRouter } from "next/navigation";
 import { HomeIcon } from "@heroicons/react/24/solid";
 import Link from "next/link";
 import { Network } from "./components/network";
 import Dashboard from "./components/dashboard";
-import { sign } from "crypto";
 const config: any = configFile;
 const injected = injectedModule();
 
@@ -89,8 +87,9 @@ export default function Home() {
   const [signer, setSigner] = useState<ethers.providers.JsonRpcSigner>();
   const [provider, setProvider] = useState<ethers.providers.Web3Provider>();
   const [dappAddress, setDappAddress] = useState<string>(
-    "0xab7528bb862fb57e8a2bcd567a2e929a0be56a5e"
-  ); //"0x48383296da5f7Ce3408Cf98445289daF48488607"
+    "0xccf6a46CF287e1f8e1b2981c1f5B92BA77F3e9Ed"
+  );
+  // "0xFa7Cc7fBa257b915B7dE86bE3Eb3114FbA94701E"); //"0x48383296da5f7Ce3408Cf98445289daF48488607"
   const [connectedWallet] = useWallets();
   const addCustomInput = async (input: any): Promise<any> => {
     const provider = new ethers.providers.Web3Provider(
@@ -114,7 +113,7 @@ export default function Home() {
     const address = await _signer.getAddress();
     console.log(_signer, address, id);
 
-    const payload = await InspectCall(`whiteList/${address}`, id);
+    const payload = await InspectCall(`whiteList/${address.toLowerCase()}`, id);
     console.log("payload is", payload);
     if (JSON.parse(payload)?.result) {
       console.log("whitelist status is:", JSON.parse(payload)?.result);
@@ -150,6 +149,7 @@ export default function Home() {
 
         <div className="p-6">
           <Network />
+
           <br />
           {!isWhiteListed && connectedWallet && (
             <div>

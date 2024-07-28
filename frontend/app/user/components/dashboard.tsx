@@ -91,9 +91,9 @@ export default function Dashboard(props: any) {
       alert(`no chain connected`);
       return;
     }
-    setIsViewModalOpen(true);
     setSelectedContractType(contractstatus.contractType);
     setcurrentContractStatus(contractstatus);
+    setIsViewModalOpen(true);
   };
 
   const handleAgreementAction = async (contract: ContractStatus) => {
@@ -137,7 +137,9 @@ export default function Dashboard(props: any) {
         });
         break;
       default:
-        console.log("viewing agreement");
+        console.log("viewing agreement", contract);
+        setSelectedContractType(contract.contractType);
+
         handleViewAgreement(contract);
         break;
     }
@@ -183,6 +185,9 @@ export default function Dashboard(props: any) {
                         <button
                           onClick={() => {
                             setcurrentContractStatus(_contractStatus);
+                            setSelectedContractType(
+                              _contractStatus.contractType
+                            );
                             _contractStatus.status !== Status.terminated
                               ? setIsSignModalOpen(true)
                               : setIsViewModalOpen(true);

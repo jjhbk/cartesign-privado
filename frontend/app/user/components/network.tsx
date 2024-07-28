@@ -6,7 +6,7 @@ export const Network: FC = () => {
   const [{ wallet, connecting }, connect, disconnect] = useConnectWallet();
   const [{ chains, connectedChain, settingChain }, setChain] = useSetChain();
   const [dappAddress, setDappAddress] = useState<string>(
-    "0x48383296da5f7Ce3408Cf98445289daF48488607"
+    "0xccf6a46CF287e1f8e1b2981c1f5B92BA77F3e9Ed"
   );
 
   return (

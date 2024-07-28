@@ -90,7 +90,7 @@ router.add<{ id: string }>("contract/:id", ({ params: { id } }) => {
 });
 
 function mapToJson(map: Map<string, Set<ContractStatus>>): string {
-  // Convert the Map to an array of key-value pairs
+  // Convert the Map to an array of key-value
   const array = Array.from(map.entries(), ([key, value]) => [
     key,
     Array.from(value),
@@ -102,6 +102,10 @@ function mapToJson(map: Map<string, Set<ContractStatus>>): string {
 const WhiteList = new Map<string, boolean>();
 WhiteList.set(
   String("0x08208F5518c622a0165DBC1432Bc2c361AdFFFB1").toLowerCase(),
+  true
+);
+WhiteList.set(
+  String("0x4eF27B6eb11b645139596a0b5E27e4B1662b0EC5").toLowerCase(),
   true
 );
 
@@ -153,7 +157,7 @@ app.addAdvanceHandler(async (data) => {
           const [user] = args;
 
           console.log(`adding ${user} to whitelist`);
-          WhiteList.set(user, true);
+          WhiteList.set(getAddress(user).toString().toLowerCase(), true);
           app.createNotice({
             payload: stringToHex(`user: ${user} has been whitelisted`),
           });

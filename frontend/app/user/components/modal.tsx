@@ -61,7 +61,6 @@ export default function Modal(props: any) {
         });
       console.log("Request set", tx);
     } catch (e) {
-      alert(e);
       console.log("error: ", e);
     }
   };
