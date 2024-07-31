@@ -12,17 +12,18 @@ async function main() {
   // "0x93f8f5f722948e286f29b86da3f7af8750cdcff98a2a960ad998fc6f14d9700c";
   // "0x9addf0ebe8de0968abee8e2ecc16fda2ba85257ab42d516163ea066500baecca";
   let salt =
-    "0x2bd1d9310a50a756340555f3735deeb04dcf73c898471d82db13510998097d3d";
+    "0xab7ae24686f6791ab46b0cb1d161c3f573784a7b5d7f1b9aa088cf152e8b5be8";
+  //"0x2bd1d9310a50a756340555f3735deeb04dcf73c898471d82db13510998097d3d";
   //"0x53b5732403fceada576945e3ce5f62a28c547855ecd10d39074d6e92ef6e0dff"; //"0xf7096865b1ec95308c42683047354dee91e13eb5d07248f30a4c81a3557ce9a3";
   try {
-    /* const txId = await selfhostedDappFactory.deployContracts(
+    const txId = await selfhostedDappFactory.deployContracts(
       owner,
       owner,
       templateHash,
       salt,
       { gasLimit: 3500000 }
-    );*/
-    const txId = await selfhostedDappFactory.calculateAddresses(
+    );
+    const txId1 = await selfhostedDappFactory.calculateAddresses(
       owner,
       owner,
       templateHash,
@@ -31,6 +32,7 @@ async function main() {
     );
 
     console.log("dapp created set: ", txId);
+    console.log("application addresses", txId1);
   } catch (e) {
     console.log("error: ", e);
   }
