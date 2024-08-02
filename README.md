@@ -1,9 +1,9 @@
-# Cartesign-Privado
+# DecentraSign-Privado
 
 A decentralized E-Signature based contract management platform with secure handwritten biometrics.
 This project uses [PrivadoID](https://docs.privado.id/docs/introduction/) for authenticating users by doing a ZK proof based KYC & [Cartesi](https://docs.cartesi.io/cartesi-rollups/1.3/) to handle the complex contract management logic in a secure + decentralized fasion.
 
-[Live - App](https://cartesign-privado-frontend.vercel.app/)
+[Live - App](https://decentra-sign-frontend.vercel.app/)
 
 ## Privado ID
 
@@ -16,7 +16,7 @@ The Cartesi Rollup framework is application-specific, assigning each dApp its ro
 
 ## Architecture
 
-![alt text](cartesi-privado-updated.jpg)
+![alt text](decentraSign.jpg)
 
 ## Deploying DApp application
 
@@ -61,4 +61,6 @@ yarn run dev
 
 ### Deployments
 
-[Live-demo](https://cartesign-privado-frontend.vercel.app/)
+[Live-demo](https://decentra-sign-frontend.vercel.app/)
+
+[Video-demo](https://drive.google.com/file/d/1vfqxyS7KILsdzY_lqxIWFKKrmD7MLXC2/view?usp=sharing)
