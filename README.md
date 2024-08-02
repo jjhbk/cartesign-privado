@@ -1,9 +1,22 @@
 # Cartesign-Privado
 
 A decentralized E-Signature based contract management platform with secure handwritten biometrics.
-This project uses [PrivadoID](https://www.privado.id/) for authenticating users by doing a ZK proof based KYC & [Cartesi](https://cartesi.io/) to handle the complex contract management logic in a secure + decentralized fasion.
+This project uses [PrivadoID](https://docs.privado.id/docs/introduction/) for authenticating users by doing a ZK proof based KYC & [Cartesi](https://docs.cartesi.io/cartesi-rollups/1.3/) to handle the complex contract management logic in a secure + decentralized fasion.
 
 [Live - App](https://cartesign-privado-frontend.vercel.app/)
+
+## Privado ID
+
+[PrivadoID](https://docs.privado.id/docs/introduction/), with the help of zero-knowledge proofs, lets users prove their identity without the need of exposing their private information. This ensures both the Freedom of Expression and Privacy by Default (user's identities are secured by zero-knowledge cryptography).
+
+## Cartesi
+
+At its core, the [Cartesi](https://docs.cartesi.io/cartesi-rollups/1.3/) Rollup executes the Cartesi Machine - a robust RISCV deterministic emulator running Linux OS - fueled by ordered inputs and custom application code. Inputs sourced from the data availability layer are read by the Cartesi Node, inside of which the Cartesi Machine processes them and generates outputs. After the optimistic rollup dispute window passes, these outputs are verifiable and possibly executable on the settlement layer.
+The Cartesi Rollup framework is application-specific, assigning each dApp its rollup app chain and CPU while linking its optimistic rollups' consensus directly to the base layer
+
+## Architecture
+
+![alt text](cartesi-privado-updated.jpg)
 
 ## Deploying DApp application
 
@@ -48,8 +61,4 @@ yarn run dev
 
 ### Deployments
 
-[backend](https://3c0209203a21-4663034037928092558.ngrok-free.app/)
-
-[frontend](https://cartesign-privado-frontend.vercel.app/)
-
-[frontend-live-repo](https://github.com/jjhbk/cartesign-privado-frontend)
+[Live-demo](https://cartesign-privado-frontend.vercel.app/)
